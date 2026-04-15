@@ -71,6 +71,9 @@ function getObjectValue(source: Record<string, unknown>, keys: string[]) {
     if (typeof value === "string" && value.trim()) {
       return value.trim();
     }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
   }
   return "";
 }
