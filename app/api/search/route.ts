@@ -102,10 +102,10 @@ function normalizeSearchItems(parsed: Record<string, unknown>) {
   );
 
   return rawItems.map((item) => ({
-    id: getObjectValue(item, ["법령ID", "법령일련번호", "ID", "id"]),
-    mst: getObjectValue(item, ["MST", "mst"]),
+    id: getObjectValue(item, ["법령ID", "ID"]),
+    mst: getObjectValue(item, ["MST", "법령일련번호", "mst"]),
     lawName: getObjectValue(item, ["법령명한글", "법령명", "lawNm", "법령명_한글"]),
-    lawType: getObjectValue(item, ["법종구분", "법종구분명", "법종"]),
+    lawType: getObjectValue(item, ["법령구분명", "법종구분", "법종구분명", "법종"]),
     effectiveDate: getObjectValue(item, ["시행일자", "공포일자"]),
     department: getObjectValue(item, ["소관부처명", "소관부처"]),
     raw: item,
