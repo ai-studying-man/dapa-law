@@ -1,4 +1,4 @@
-import { XMLParser } from "fast-xml-parser";
+import { XMLParser, XMLValidator } from "fast-xml-parser";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -150,6 +150,25 @@ type SearchAttempt = {
   }>;
 };
 
+function sanitizeXml(xml: string) {
+  return xml.replace(/^\uFEFF/, "").trim();
+}
+
+function parseXmlOrThrow(xml: string) {
+  const sanitized = sanitizeXml(xml);
+  const validation = XMLValidator.validate(sanitized);
+
+  if (validation !== true) {
+    throw new Error(
+      typeof validation === "object"
+        ? validation.err.msg
+        : "유효하지 않은 XML 응답"
+    );
+  }
+
+  return parser.parse(sanitized) as Record<string, unknown>;
+}
+
 async function runSearchAttempt(params: {
   category: string;
   query: string;
@@ -183,7 +202,7 @@ async function runSearchAttempt(params: {
     };
   }
 
-  const parsed = parser.parse(xml) as Record<string, unknown>;
+  const parsed = parseXmlOrThrow(xml);
   const apiError = extractApiError(parsed);
 
   if (apiError) {
@@ -200,9 +219,9 @@ async function runSearchAttempt(params: {
 
   const items = normalizeSearchItems(parsed);
 
-  return {
-    ok: true as const,
-    result: {
+    return {
+      ok: true as const,
+      result: {
       category: params.category,
       target,
       finalQuery,
@@ -308,11 +327,15 @@ export async function GET(req: Request) {
       items: matched.items,
       data: matched.parsed,
     });
-  } catch {
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "알 수 없는 XML 파싱 오류";
+
     return Response.json(
       {
         ok: false,
         error: "XML 파싱 실패",
+        message,
       },
       { status: 500 }
     );
