@@ -44,6 +44,34 @@ function parseXmlOrThrow(xml: string) {
   return parser.parse(sanitized) as Record<string, unknown>;
 }
 
+function buildFetchHeaders() {
+  return {
+    Accept: "application/xml, text/xml, */*",
+    "User-Agent":
+      "Mozilla/5.0 (compatible; DAPA-Law/1.0; +https://dapa-law.vercel.app)",
+  };
+}
+
+async function fetchWithRetry(url: string, retries = 2) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fetch(url, {
+        cache: "no-store",
+        headers: buildFetchHeaders(),
+      });
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+      }
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("fetch failed");
+}
+
 function extractApiError(parsed: Record<string, unknown>) {
   if (
     parsed.Response &&
@@ -100,14 +128,7 @@ export async function GET(req: Request) {
   let res: Response;
 
   try {
-    res = await fetch(url, {
-      cache: "no-store",
-      headers: {
-        Accept: "application/xml, text/xml, */*",
-        "User-Agent":
-          "Mozilla/5.0 (compatible; DAPA-Law/1.0; +https://dapa-law.vercel.app)",
-      },
-    });
+    res = await fetchWithRetry(url);
   } catch (error) {
     return Response.json(
       {
