@@ -150,6 +150,12 @@ type SearchAttempt = {
   }>;
 };
 
+type QueryAttempt = {
+  originalQuery: string;
+  finalQuery: string;
+  usedAgencyPriority: boolean;
+};
+
 function sanitizeXml(xml: string) {
   return xml.replace(/^\uFEFF/, "").trim();
 }
@@ -171,13 +177,12 @@ function parseXmlOrThrow(xml: string) {
 
 async function runSearchAttempt(params: {
   category: string;
-  query: string;
-  agencyPriority: string;
+  queryAttempt: QueryAttempt;
   page: string;
   display: string;
 }) {
   const target = categoryToTarget(params.category);
-  const finalQuery = buildPriorityQuery(params.query, params.agencyPriority);
+  const finalQuery = params.queryAttempt.finalQuery;
 
   const url = buildSearchUrl({
     target,
@@ -255,52 +260,79 @@ export async function GET(req: Request) {
       category === "law"
         ? ["law", "admin_rule", "ordinance", "ministry_interpretation"]
         : [category];
+    const queryAttempts: QueryAttempt[] = [
+      {
+        originalQuery: query,
+        finalQuery: query,
+        usedAgencyPriority: false,
+      },
+    ];
+
+    if (agencyPriority) {
+      const priorityQuery = buildPriorityQuery(query, agencyPriority);
+      if (priorityQuery !== query) {
+        queryAttempts.push({
+          originalQuery: query,
+          finalQuery: priorityQuery,
+          usedAgencyPriority: true,
+        });
+      }
+    }
 
     const attempts: Array<{
       category: string;
       target: string;
       itemCount: number;
+      finalQuery: string;
+      usedAgencyPriority: boolean;
     }> = [];
     let matched: SearchAttempt | null = null;
 
-    for (const candidateCategory of fallbackCategories) {
-      const attempt = await runSearchAttempt({
-        category: candidateCategory,
-        query,
-        agencyPriority,
-        page,
-        display,
-      });
+    for (const queryAttempt of queryAttempts) {
+      for (const candidateCategory of fallbackCategories) {
+        const attempt = await runSearchAttempt({
+          category: candidateCategory,
+          queryAttempt,
+          page,
+          display,
+        });
 
-      if (!attempt.ok) {
-        return Response.json(
-          {
-            ok: false,
-            error: "국가법령정보 검색 API 오류",
-            category: candidateCategory,
-            target: attempt.target,
-            requested_query: query,
-            effective_query: attempt.finalQuery,
-            api_error: attempt.apiError,
-            raw: attempt.raw,
-          },
-          { status: attempt.status === 502 ? 502 : 500 }
-        );
+        if (!attempt.ok) {
+          return Response.json(
+            {
+              ok: false,
+              error: "국가법령정보 검색 API 오류",
+              category: candidateCategory,
+              target: attempt.target,
+              requested_query: query,
+              effective_query: attempt.finalQuery,
+              api_error: attempt.apiError,
+              raw: attempt.raw,
+            },
+            { status: attempt.status === 502 ? 502 : 500 }
+          );
+        }
+
+        attempts.push({
+          category: attempt.result.category,
+          target: attempt.result.target,
+          itemCount: attempt.result.items.length,
+          finalQuery: attempt.result.finalQuery,
+          usedAgencyPriority: queryAttempt.usedAgencyPriority,
+        });
+
+        if (attempt.result.items.length > 0) {
+          matched = attempt.result;
+          break;
+        }
+
+        if (!matched) {
+          matched = attempt.result;
+        }
       }
 
-      attempts.push({
-        category: attempt.result.category,
-        target: attempt.result.target,
-        itemCount: attempt.result.items.length,
-      });
-
-      if (attempt.result.items.length > 0) {
-        matched = attempt.result;
+      if (matched && matched.items.length > 0) {
         break;
-      }
-
-      if (!matched) {
-        matched = attempt.result;
       }
     }
 
@@ -322,6 +354,7 @@ export async function GET(req: Request) {
       agency_priority: agencyPriority,
       requested_query: query,
       effective_query: matched.finalQuery,
+      agency_priority_applied: matched.finalQuery !== query,
       fallback_used: matched.category !== category,
       searched_categories: attempts,
       items: matched.items,
