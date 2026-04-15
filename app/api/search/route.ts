@@ -134,6 +134,84 @@ function extractApiError(parsed: Record<string, unknown>) {
   return null;
 }
 
+type SearchAttempt = {
+  category: string;
+  target: string;
+  finalQuery: string;
+  parsed: Record<string, unknown>;
+  items: Array<{
+    id: string;
+    mst: string;
+    lawName: string;
+    lawType: string;
+    effectiveDate: string;
+    department: string;
+    raw: Record<string, unknown>;
+  }>;
+};
+
+async function runSearchAttempt(params: {
+  category: string;
+  query: string;
+  agencyPriority: string;
+  page: string;
+  display: string;
+}) {
+  const target = categoryToTarget(params.category);
+  const finalQuery = buildPriorityQuery(params.query, params.agencyPriority);
+
+  const url = buildSearchUrl({
+    target,
+    type: "XML",
+    query: finalQuery,
+    page: params.page,
+    display: params.display,
+    sort: "lasc",
+  });
+
+  const res = await fetch(url, { cache: "no-store" });
+  const xml = await res.text();
+
+  if (!res.ok) {
+    return {
+      ok: false as const,
+      status: res.status,
+      raw: xml,
+      category: params.category,
+      target,
+      finalQuery,
+    };
+  }
+
+  const parsed = parser.parse(xml) as Record<string, unknown>;
+  const apiError = extractApiError(parsed);
+
+  if (apiError) {
+    return {
+      ok: false as const,
+      status: 502,
+      raw: parsed,
+      apiError,
+      category: params.category,
+      target,
+      finalQuery,
+    };
+  }
+
+  const items = normalizeSearchItems(parsed);
+
+  return {
+    ok: true as const,
+    result: {
+      category: params.category,
+      target,
+      finalQuery,
+      parsed,
+      items,
+    } satisfies SearchAttempt,
+  };
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
@@ -153,71 +231,88 @@ export async function GET(req: Request) {
     );
   }
 
-  const target = categoryToTarget(category);
-  const finalQuery = buildPriorityQuery(query, agencyPriority);
-
-  const url = buildSearchUrl({
-    target,
-    type: "XML",
-    query: finalQuery,
-    page,
-    display,
-    sort: "lasc",
-  });
-
-  const res = await fetch(url, { cache: "no-store" });
-  const xml = await res.text();
-
-  if (!res.ok) {
-    return Response.json(
-      {
-        ok: false,
-        error: "국가법령정보 API 호출 실패",
-        status: res.status,
-        raw: xml,
-      },
-      { status: 500 }
-    );
-  }
-
   try {
-    const parsed = parser.parse(xml);
-    const apiError = extractApiError(parsed as Record<string, unknown>);
+    const fallbackCategories =
+      category === "law"
+        ? ["law", "admin_rule", "ordinance", "ministry_interpretation"]
+        : [category];
 
-    if (apiError) {
+    const attempts: Array<{
+      category: string;
+      target: string;
+      itemCount: number;
+    }> = [];
+    let matched: SearchAttempt | null = null;
+
+    for (const candidateCategory of fallbackCategories) {
+      const attempt = await runSearchAttempt({
+        category: candidateCategory,
+        query,
+        agencyPriority,
+        page,
+        display,
+      });
+
+      if (!attempt.ok) {
+        return Response.json(
+          {
+            ok: false,
+            error: "국가법령정보 검색 API 오류",
+            category: candidateCategory,
+            target: attempt.target,
+            requested_query: query,
+            effective_query: attempt.finalQuery,
+            api_error: attempt.apiError,
+            raw: attempt.raw,
+          },
+          { status: attempt.status === 502 ? 502 : 500 }
+        );
+      }
+
+      attempts.push({
+        category: attempt.result.category,
+        target: attempt.result.target,
+        itemCount: attempt.result.items.length,
+      });
+
+      if (attempt.result.items.length > 0) {
+        matched = attempt.result;
+        break;
+      }
+
+      if (!matched) {
+        matched = attempt.result;
+      }
+    }
+
+    if (!matched) {
       return Response.json(
         {
           ok: false,
-          error: "국가법령정보 검색 API 오류",
-          category,
-          target,
-          requested_query: query,
-          effective_query: finalQuery,
-          api_error: apiError,
-          raw: parsed,
+          error: "검색 결과를 생성하지 못했습니다.",
         },
-        { status: 502 }
+        { status: 500 }
       );
     }
 
-    const items = normalizeSearchItems(parsed as Record<string, unknown>);
-
     return Response.json({
       ok: true,
-      category,
-      target,
+      category: matched.category,
+      requested_category: category,
+      target: matched.target,
       agency_priority: agencyPriority,
       requested_query: query,
-      effective_query: finalQuery,
-      items,
-      data: parsed,
+      effective_query: matched.finalQuery,
+      fallback_used: matched.category !== category,
+      searched_categories: attempts,
+      items: matched.items,
+      data: matched.parsed,
     });
   } catch {
     return Response.json(
       {
         ok: false,
         error: "XML 파싱 실패",
-        raw: xml,
       },
       { status: 500 }
     );
