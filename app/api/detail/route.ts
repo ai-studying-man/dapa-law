@@ -1,4 +1,6 @@
-import { XMLParser } from "fast-xml-parser";
+import { XMLParser, XMLValidator } from "fast-xml-parser";
+
+export const runtime = "nodejs";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -21,6 +23,25 @@ function buildDetailUrl(params: Record<string, string>) {
   }
 
   return url.toString();
+}
+
+function sanitizeXml(xml: string) {
+  return xml.replace(/^\uFEFF/, "").trim();
+}
+
+function parseXmlOrThrow(xml: string) {
+  const sanitized = sanitizeXml(xml);
+  const validation = XMLValidator.validate(sanitized);
+
+  if (validation !== true) {
+    throw new Error(
+      typeof validation === "object"
+        ? validation.err.msg
+        : "유효하지 않은 XML 응답"
+    );
+  }
+
+  return parser.parse(sanitized) as Record<string, unknown>;
 }
 
 function extractApiError(parsed: Record<string, unknown>) {
@@ -76,7 +97,31 @@ export async function GET(req: Request) {
     type: "XML",
   });
 
-  const res = await fetch(url, { cache: "no-store" });
+  let res: Response;
+
+  try {
+    res = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        Accept: "application/xml, text/xml, */*",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; DAPA-Law/1.0; +https://dapa-law.vercel.app)",
+      },
+    });
+  } catch (error) {
+    return Response.json(
+      {
+        ok: false,
+        error: "국가법령정보 원본 서버 연결 실패",
+        message: error instanceof Error ? error.message : "fetch failed",
+        target,
+        id: id || mst,
+        detail_url: url,
+      },
+      { status: 502 }
+    );
+  }
+
   const xml = await res.text();
 
   if (!res.ok) {
@@ -92,7 +137,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const parsed = parser.parse(xml);
+    const parsed = parseXmlOrThrow(xml);
     const apiError = extractApiError(parsed as Record<string, unknown>);
 
     if (apiError) {
@@ -105,6 +150,7 @@ export async function GET(req: Request) {
           error: "국가법령정보 상세 조회 실패",
           target,
           id: id || mst,
+          detail_url: url,
           api_error: apiError,
           raw: parsed,
         },
@@ -116,13 +162,16 @@ export async function GET(req: Request) {
       ok: true,
       target,
       id: id || mst,
+      detail_url: url,
       data: parsed,
     });
-  } catch {
+  } catch (error) {
     return Response.json(
       {
         ok: false,
         error: "XML 파싱 실패",
+        message: error instanceof Error ? error.message : "알 수 없는 XML 파싱 오류",
+        detail_url: url,
         raw: xml,
       },
       { status: 500 }
