@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# dapa-law
+
+`dapa-law` is a Next.js 16 project for building a law-focused web application.  
+The repository is currently in its setup phase, with the base App Router project created and `fast-xml-parser` added for future XML-based data ingestion or processing.
+
+## Current Status
+
+- Next.js App Router project initialized
+- TypeScript and ESLint configured
+- Tailwind CSS v4 included
+- `fast-xml-parser` installed
+- GitHub repository connected: [ai-studying-man/dapa-law](https://github.com/ai-studying-man/dapa-law)
+
+## Tech Stack
+
+- Next.js 16
+- React 19
+- TypeScript 5
+- Tailwind CSS 4
+- fast-xml-parser
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies if needed:
+
+```bash
+npm install
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```text
+app/          App Router pages and layouts
+public/       Static assets
+package.json  Project scripts and dependencies
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- The current homepage still uses the default starter UI from `create-next-app`.
+- The site metadata in `app/layout.tsx` is also still set to the default values.
+- `fast-xml-parser` is ready to use once XML import or transformation logic is added.
 
-## Deploy on Vercel
+## Next Steps
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Replace the starter homepage with the actual DAPA law service UI
+- Update metadata, branding, and content
+- Define how legal or policy data will be fetched, parsed, and displayed
+- Add the first domain-specific pages and components
