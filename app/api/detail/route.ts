@@ -23,6 +23,38 @@ function buildDetailUrl(params: Record<string, string>) {
   return url.toString();
 }
 
+function extractApiError(parsed: Record<string, unknown>) {
+  if (
+    parsed.Response &&
+    typeof parsed.Response === "object" &&
+    parsed.Response !== null
+  ) {
+    const response = parsed.Response as Record<string, unknown>;
+    const result =
+      typeof response.result === "string" ? response.result.trim() : "";
+    const message = typeof response.msg === "string" ? response.msg.trim() : "";
+
+    if (result || message) {
+      return {
+        result,
+        message,
+      };
+    }
+  }
+
+  if (typeof parsed.Law === "string") {
+    const message = parsed.Law.trim();
+    if (message) {
+      return {
+        result: "detail_lookup_failed",
+        message,
+      };
+    }
+  }
+
+  return null;
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
@@ -61,6 +93,25 @@ export async function GET(req: Request) {
 
   try {
     const parsed = parser.parse(xml);
+    const apiError = extractApiError(parsed as Record<string, unknown>);
+
+    if (apiError) {
+      const status =
+        apiError.result === "detail_lookup_failed" ? 404 : 502;
+
+      return Response.json(
+        {
+          ok: false,
+          error: "국가법령정보 상세 조회 실패",
+          target,
+          id: id || mst,
+          api_error: apiError,
+          raw: parsed,
+        },
+        { status }
+      );
+    }
+
     return Response.json({
       ok: true,
       target,

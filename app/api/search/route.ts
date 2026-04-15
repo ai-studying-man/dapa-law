@@ -58,6 +58,82 @@ function buildPriorityQuery(query: string, agencyPriority: string) {
   return `${query} ${agencyPriority}`;
 }
 
+function asArray<T>(value: T | T[] | undefined): T[] {
+  if (!value) {
+    return [];
+  }
+  return Array.isArray(value) ? value : [value];
+}
+
+function getObjectValue(source: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return "";
+}
+
+function normalizeSearchItems(parsed: Record<string, unknown>) {
+  const lawSearch =
+    parsed.LawSearch && typeof parsed.LawSearch === "object"
+      ? (parsed.LawSearch as Record<string, unknown>)
+      : null;
+
+  if (!lawSearch) {
+    return [];
+  }
+
+  const listCandidates = [
+    lawSearch.law,
+    lawSearch.법령,
+    lawSearch.item,
+    lawSearch.items,
+    lawSearch.result,
+    lawSearch.results,
+  ];
+
+  const rawItems = listCandidates.flatMap((candidate) =>
+    asArray(candidate).filter(
+      (item): item is Record<string, unknown> =>
+        typeof item === "object" && item !== null
+    )
+  );
+
+  return rawItems.map((item) => ({
+    id: getObjectValue(item, ["법령ID", "법령일련번호", "ID", "id"]),
+    mst: getObjectValue(item, ["MST", "mst"]),
+    lawName: getObjectValue(item, ["법령명한글", "법령명", "lawNm", "법령명_한글"]),
+    lawType: getObjectValue(item, ["법종구분", "법종구분명", "법종"]),
+    effectiveDate: getObjectValue(item, ["시행일자", "공포일자"]),
+    department: getObjectValue(item, ["소관부처명", "소관부처"]),
+    raw: item,
+  }));
+}
+
+function extractApiError(parsed: Record<string, unknown>) {
+  if (
+    parsed.Response &&
+    typeof parsed.Response === "object" &&
+    parsed.Response !== null
+  ) {
+    const response = parsed.Response as Record<string, unknown>;
+    const result =
+      typeof response.result === "string" ? response.result.trim() : "";
+    const message = typeof response.msg === "string" ? response.msg.trim() : "";
+
+    if (result || message) {
+      return {
+        result,
+        message,
+      };
+    }
+  }
+
+  return null;
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
@@ -106,6 +182,26 @@ export async function GET(req: Request) {
 
   try {
     const parsed = parser.parse(xml);
+    const apiError = extractApiError(parsed as Record<string, unknown>);
+
+    if (apiError) {
+      return Response.json(
+        {
+          ok: false,
+          error: "국가법령정보 검색 API 오류",
+          category,
+          target,
+          requested_query: query,
+          effective_query: finalQuery,
+          api_error: apiError,
+          raw: parsed,
+        },
+        { status: 502 }
+      );
+    }
+
+    const items = normalizeSearchItems(parsed as Record<string, unknown>);
+
     return Response.json({
       ok: true,
       category,
@@ -113,6 +209,7 @@ export async function GET(req: Request) {
       agency_priority: agencyPriority,
       requested_query: query,
       effective_query: finalQuery,
+      items,
       data: parsed,
     });
   } catch {
