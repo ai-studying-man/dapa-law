@@ -1,9 +1,17 @@
 import { searchCatalog } from "@/lib/dapa-catalog";
 import { jsonResponse, optionsResponse } from "@/lib/http";
-import { normalizeTarget, searchLawApi } from "@/lib/law-api";
+import { normalizeTarget, searchLawApi, selectBestSearchItem } from "@/lib/law-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function normalizeName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[\u300C\u300D\u300E\u300F()[\]{}'".,]/g, "")
+    .trim();
+}
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -58,6 +66,13 @@ export async function GET(req: Request) {
       page: Number.isFinite(page) && page > 0 ? page : 1,
       display: Number.isFinite(display) && display > 0 ? display : 10,
     });
+    const wantedName = normalizeName(catalog.items[0]?.name ?? catalog.items[0]?.query ?? query);
+    const bestItem =
+      upstream.items.find((item) => normalizeName(item.name) === wantedName) ??
+      selectBestSearchItem(upstream.items, catalog.items[0]?.query ?? query);
+    const items = bestItem
+      ? [bestItem, ...upstream.items.filter((item) => item !== bestItem)]
+      : upstream.items;
 
     return jsonResponse({
       ok: true,
@@ -66,7 +81,7 @@ export async function GET(req: Request) {
       catalog,
       upstream: {
         requestUrl: upstream.requestUrl,
-        items: upstream.items,
+        items,
       },
     });
   } catch (error) {

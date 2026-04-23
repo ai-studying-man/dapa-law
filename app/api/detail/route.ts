@@ -4,11 +4,20 @@ import {
   extractArticle,
   getLawDetail,
   normalizeTarget,
+  selectBestSearchItem,
   searchLawApi,
 } from "@/lib/law-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function normalizeName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[\u300C\u300D\u300E\u300F()[\]{}'".,]/g, "")
+    .trim();
+}
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -52,7 +61,10 @@ export async function GET(req: Request) {
         query: catalogMatch?.query ?? query,
         display: 5,
       });
-      selectedSearchItem = search.items[0] ?? null;
+      const wantedName = normalizeName(catalogMatch?.name ?? catalogMatch?.query ?? query);
+      selectedSearchItem =
+        search.items.find((item) => normalizeName(item.name) === wantedName) ??
+        selectBestSearchItem(search.items, catalogMatch?.query ?? query);
       detailId = selectedSearchItem?.id ?? "";
       detailMst = selectedSearchItem?.mst ?? "";
 

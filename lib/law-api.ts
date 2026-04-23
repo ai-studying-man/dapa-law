@@ -13,6 +13,19 @@ export type LawSearchItem = {
   raw: Record<string, unknown>;
 };
 
+function normalizeMatchText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[\u300C\u300D\u300E\u300F()[\]{}'".,]/g, "")
+    .trim();
+}
+
+function toComparableDate(value: string) {
+  const numeric = value.replace(/[^\d]/g, "");
+  return numeric || "0";
+}
+
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "",
@@ -23,12 +36,18 @@ const KO = {
   law: "\uBC95\uB839",
   adminRule: "\uD589\uC815\uADDC\uCE59",
   ordinance: "\uC790\uCE58\uBC95\uADDC",
+  lawSearchRoot: "LawSearch",
+  adminRuleSearchRoot: "AdmRulSearch",
+  ordinanceSearchRoot: "OrdinSearch",
   lawId: "\uBC95\uB839ID",
   adminRuleId: "\uD589\uC815\uADDC\uCE59ID",
   ordinanceId: "\uC790\uCE58\uBC95\uADDCID",
   lawSerial: "\uBC95\uB839\uC77C\uB828\uBC88\uD638",
   adminRuleSerial: "\uD589\uC815\uADDC\uCE59\uC77C\uB828\uBC88\uD638",
   ordinanceSerial: "\uC790\uCE58\uBC95\uADDC\uC77C\uB828\uBC88\uD638",
+  lawDetailLink: "\uBC95\uB839\uC0C1\uC138\uB9C1\uD06C",
+  adminRuleDetailLink: "\uD589\uC815\uADDC\uCE59\uC0C1\uC138\uB9C1\uD06C",
+  ordinanceDetailLink: "\uC790\uCE58\uBC95\uADDC\uC0C1\uC138\uB9C1\uD06C",
   lawNameKo: "\uBC95\uB839\uBA85\uD55C\uAE00",
   lawName: "\uBC95\uB839\uBA85",
   adminRuleName: "\uD589\uC815\uADDC\uCE59\uBA85",
@@ -186,11 +205,35 @@ function asRecordArray(value: unknown): Record<string, unknown>[] {
   );
 }
 
+function extractDetailIdFromLink(item: Record<string, unknown>) {
+  const detailLink = readString(item, [
+    KO.lawDetailLink,
+    KO.adminRuleDetailLink,
+    KO.ordinanceDetailLink,
+    "detailLink",
+  ]);
+
+  if (!detailLink) {
+    return "";
+  }
+
+  try {
+    const url = new URL(detailLink, getLawApiBase());
+    return url.searchParams.get("ID")?.trim() ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export function normalizeSearchItems(parsed: Record<string, unknown>) {
   const root =
-    parsed.LawSearch && typeof parsed.LawSearch === "object"
-      ? (parsed.LawSearch as Record<string, unknown>)
-      : parsed;
+    parsed[KO.lawSearchRoot] && typeof parsed[KO.lawSearchRoot] === "object"
+      ? (parsed[KO.lawSearchRoot] as Record<string, unknown>)
+      : parsed[KO.adminRuleSearchRoot] && typeof parsed[KO.adminRuleSearchRoot] === "object"
+      ? (parsed[KO.adminRuleSearchRoot] as Record<string, unknown>)
+      : parsed[KO.ordinanceSearchRoot] && typeof parsed[KO.ordinanceSearchRoot] === "object"
+        ? (parsed[KO.ordinanceSearchRoot] as Record<string, unknown>)
+        : parsed;
 
   const candidates = [
     ...asRecordArray(root.law),
@@ -207,16 +250,31 @@ export function normalizeSearchItems(parsed: Record<string, unknown>) {
 
   return candidates
     .map((item): LawSearchItem => {
-      const id = readString(item, [
-        KO.lawId,
-        KO.adminRuleId,
-        KO.ordinanceId,
-        "ID",
-        "id",
-      ]);
-      const mst = readString(item, [
-        "MST",
-        "mst",
+      const detailIdFromLink = extractDetailIdFromLink(item);
+      const hasAdminRuleFields = Boolean(
+        item[KO.adminRuleSerial] || item[KO.adminRuleId] || item[KO.adminRuleName]
+      );
+      const hasOrdinanceFields = Boolean(
+        item[KO.ordinanceSerial] || item[KO.ordinanceId] || item[KO.ordinanceName]
+      );
+      const hasLawFields = Boolean(item[KO.lawSerial] || item[KO.lawId] || item[KO.lawName]);
+      const id = hasAdminRuleFields
+        ? readString(item, [KO.adminRuleSerial, "ID", "id", KO.adminRuleId]) || detailIdFromLink
+        : hasOrdinanceFields
+          ? readString(item, [KO.ordinanceSerial, "ID", "id", KO.ordinanceId]) ||
+            detailIdFromLink
+          : readString(item, [KO.lawId, "ID", "id"]) || detailIdFromLink;
+      const mst = hasLawFields
+        ? readString(item, [
+            "MST",
+            "mst",
+            KO.lawSerial,
+          ])
+        : readString(item, [
+            "MST",
+            "mst",
+          ]);
+      const fallbackMst = readString(item, [
         KO.lawSerial,
         KO.adminRuleSerial,
         KO.ordinanceSerial,
@@ -232,7 +290,7 @@ export function normalizeSearchItems(parsed: Record<string, unknown>) {
 
       return {
         id,
-        mst,
+        mst: mst || fallbackMst,
         name,
         type: readString(item, [
           KO.lawClassName,
@@ -263,6 +321,55 @@ export function normalizeSearchItems(parsed: Record<string, unknown>) {
       seen.add(key);
       return true;
     });
+}
+
+export function selectBestSearchItem(items: LawSearchItem[], query: string) {
+  const normalizedQuery = normalizeMatchText(query);
+
+  if (!normalizedQuery) {
+    return items[0] ?? null;
+  }
+
+  const scored = items
+    .map((item) => {
+      const normalizedName = normalizeMatchText(item.name);
+      let score = 0;
+
+      if (normalizedName === normalizedQuery) {
+        score = 300;
+      } else if (normalizedName.includes(normalizedQuery)) {
+        score = 200;
+      } else if (normalizedQuery.includes(normalizedName)) {
+        score = 150;
+      } else if (item.name.includes(query)) {
+        score = 100;
+      }
+
+      return { item, score };
+    })
+    .sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+
+      const effectiveCompare = toComparableDate(b.item.effectiveDate).localeCompare(
+        toComparableDate(a.item.effectiveDate)
+      );
+      if (effectiveCompare !== 0) {
+        return effectiveCompare;
+      }
+
+      const promulgationCompare = toComparableDate(b.item.promulgationDate).localeCompare(
+        toComparableDate(a.item.promulgationDate)
+      );
+      if (promulgationCompare !== 0) {
+        return promulgationCompare;
+      }
+
+      return a.item.name.localeCompare(b.item.name, "ko");
+    });
+
+  return scored[0]?.item ?? null;
 }
 
 export async function searchLawApi(params: {
@@ -375,6 +482,29 @@ function visitObjects(
   return null;
 }
 
+function extractArticleFromTextLines(parsed: Record<string, unknown>, wanted: string) {
+  const marker = `\uC81C${wanted}\uC870`;
+  const articleLine = flattenText(parsed).find((text) => {
+    const normalized = text.trim();
+    return normalized.startsWith(marker) || normalized.includes(`${marker}(`);
+  });
+
+  if (!articleLine) {
+    return null;
+  }
+
+  const titleMatch = articleLine.match(
+    new RegExp(`^${marker}(?:\\(([^)]+)\\))?`)
+  );
+
+  return {
+    article: `\uC81C${wanted}\uC870`,
+    title: titleMatch?.[1] ?? "",
+    text: articleLine,
+    raw: articleLine,
+  };
+}
+
 export function extractArticle(parsed: Record<string, unknown>, article?: string | null) {
   if (!article) {
     return null;
@@ -404,7 +534,7 @@ export function extractArticle(parsed: Record<string, unknown>, article?: string
   });
 
   if (!node) {
-    return null;
+    return extractArticleFromTextLines(parsed, wanted);
   }
 
   return {
