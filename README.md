@@ -78,6 +78,13 @@ https://your-vercel-domain.vercel.app/api/openapi
 3. Call `/api/detail` with `query` or direct `id`.
 4. For statutes, pass `article` when only one article is needed.
 
+## GPT Instructions
+
+Use [gpt-instructions.md](C:/Users/com/Desktop/law/dapa-law/docs/gpt-instructions.md) as the source text for the GPT Builder instructions field.
+
+- The schema URL for Actions is still `https://your-vercel-domain.vercel.app/api/openapi`.
+- The instructions file is separate from the schema and controls how the GPT chooses and presents action calls.
+
 ## Local Checks
 
 ```bash

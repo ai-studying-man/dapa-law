@@ -26,9 +26,9 @@ export async function GET(req: Request) {
     openapi: "3.1.0",
     info: {
       title: "DAPA Law Vercel Wrapper API",
-      version: "2.0.0",
+      version: "2.1.0",
       description:
-        "Vercel wrapper for selected National Law Information APIs. This schema intentionally excludes unrelated categories and central-agency interpretation feeds that are not needed for DAPA.",
+        "Vercel wrapper for selected National Law Information APIs used by the DAPA chatbot. This schema excludes unrelated guide-list categories and keeps appendix or form lookups search-only.",
     },
     servers: [
       {
@@ -38,10 +38,10 @@ export async function GET(req: Request) {
     paths: {
       "/api/search": {
         get: {
-          operationId: "searchNationalLawDocuments",
+          operationId: "searchLawOpenData",
           summary: "Search selected National Law Information categories",
           description:
-            "Searches only the allowed categories: current law, administrative rules, local ordinances, precedents, Constitutional Court decisions, legal interpretations, administrative appeal decisions, treaties, legal terms, and appendix/form catalogs.",
+            "Searches only the allowed categories: current law, administrative rules, local ordinances, precedents, Constitutional Court decisions, legal interpretations, administrative appeal decisions, treaties, legal terms, and appendix or form catalogs.",
           parameters: [
             {
               name: "query",
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
                 default: "auto",
               },
               description:
-                "Use auto to search across the main text categories. Appendix categories are search-only.",
+                "Use auto to search across the main text categories. For statute questions, prefer law first. Appendix categories are search-only.",
             },
             {
               name: "page",
@@ -82,10 +82,10 @@ export async function GET(req: Request) {
       },
       "/api/detail": {
         get: {
-          operationId: "getNationalLawDocumentDetail",
+          operationId: "getLawOpenDataDocument",
           summary: "Get document detail for a selected category",
           description:
-            "Retrieves live detail text from the National Law Information API. Appendix categories are not supported here because they are search-only.",
+            "Retrieves live detail text from the National Law Information API. Appendix categories are not supported here because they are search-only. Use query whenever possible and article when a specific statute article is needed.",
           parameters: [
             {
               name: "category",
@@ -121,7 +121,7 @@ export async function GET(req: Request) {
               in: "query",
               schema: { type: "string" },
               description:
-                "Optional article selector for statute-like texts. Examples: 10, 10조, 제10조.",
+                "Optional article selector for statute-like texts. Examples: 10, 10jo, Article 10.",
             },
           ],
           responses: {
