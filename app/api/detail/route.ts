@@ -5,20 +5,12 @@ import {
   getLawDetail,
   normalizeTarget,
   selectBestSearchItem,
-  searchLawApi,
+  searchLawApiMultiTarget,
 } from "@/lib/law-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const preferredRegion = "icn1";
-
-function normalizeName(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/[\u300C\u300D\u300E\u300F()[\]{}'".,]/g, "")
-    .trim();
-}
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -36,10 +28,10 @@ export async function GET(req: Request) {
   const article = searchParams.get("article")?.trim() || "";
   const requestedTarget = searchParams.get("target");
   const catalogMatch = query ? findBestCatalogMatch(query) : null;
-  const target =
+  const fallbackTarget =
     requestedTarget && requestedTarget !== "auto"
       ? normalizeTarget(requestedTarget)
-      : catalogMatch?.target ?? "law";
+      : "law";
 
   if (!query && !id && !mst) {
     return jsonResponse(
@@ -55,19 +47,18 @@ export async function GET(req: Request) {
     let detailId = id;
     let detailMst = mst;
     let selectedSearchItem = null;
+    let target = fallbackTarget;
 
     if (query) {
-      const search = await searchLawApi({
-        target,
-        query: catalogMatch?.query ?? query,
+      const search = await searchLawApiMultiTarget({
+        target: requestedTarget,
+        query,
         display: 5,
       });
-      const wantedName = normalizeName(catalogMatch?.name ?? catalogMatch?.query ?? query);
-      selectedSearchItem =
-        search.items.find((item) => normalizeName(item.name) === wantedName) ??
-        selectBestSearchItem(search.items, catalogMatch?.query ?? query);
+      selectedSearchItem = selectBestSearchItem(search.items, query);
       detailId = selectedSearchItem?.id ?? detailId;
       detailMst = selectedSearchItem?.mst ?? detailMst;
+      target = selectedSearchItem?.target ?? fallbackTarget;
     }
 
     if (!detailId && !detailMst) {
@@ -107,7 +98,7 @@ export async function GET(req: Request) {
       {
         ok: false,
         query,
-        target,
+        target: requestedTarget ?? "auto",
         catalogMatch,
         error: "Failed to call the National Law Information detail API.",
         message: error instanceof Error ? error.message : "unknown error",

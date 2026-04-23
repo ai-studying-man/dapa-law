@@ -3,6 +3,7 @@ import { XMLParser, XMLValidator } from "fast-xml-parser";
 export type LawTarget = "law" | "admrul" | "ordin";
 
 export type LawSearchItem = {
+  target: LawTarget;
   id: string;
   mst: string;
   name: string;
@@ -87,6 +88,8 @@ const TARGET_ALIASES: Record<string, LawTarget> = {
   ordin: "ordin",
   [KO.ordinance]: "ordin",
 };
+
+const ALL_TARGETS: LawTarget[] = ["law", "admrul", "ordin"];
 
 export function normalizeTarget(value?: string | null): LawTarget {
   if (!value) {
@@ -289,6 +292,7 @@ export function normalizeSearchItems(parsed: Record<string, unknown>) {
         item[KO.ordinanceSerial] || item[KO.ordinanceId] || item[KO.ordinanceName]
       );
       const hasLawFields = Boolean(item[KO.lawSerial] || item[KO.lawId] || item[KO.lawName]);
+      const target = hasAdminRuleFields ? "admrul" : hasOrdinanceFields ? "ordin" : "law";
       const id = hasAdminRuleFields
         ? readString(item, [KO.adminRuleSerial, "ID", "id", KO.adminRuleId]) || detailIdFromLink
         : hasOrdinanceFields
@@ -320,6 +324,7 @@ export function normalizeSearchItems(parsed: Record<string, unknown>) {
       ]);
 
       return {
+        target,
         id,
         mst: mst || fallbackMst,
         name,
@@ -403,6 +408,14 @@ export function selectBestSearchItem(items: LawSearchItem[], query: string) {
   return scored[0]?.item ?? null;
 }
 
+export function resolveSearchTargets(value?: string | null) {
+  if (!value || value === "auto") {
+    return ALL_TARGETS;
+  }
+
+  return [normalizeTarget(value)];
+}
+
 export async function searchLawApi(params: {
   target: LawTarget;
   query: string;
@@ -422,6 +435,57 @@ export async function searchLawApi(params: {
     requestUrl,
     parsed,
     items: normalizeSearchItems(parsed),
+  };
+}
+
+export async function searchLawApiMultiTarget(params: {
+  target?: string | null;
+  query: string;
+  page?: number;
+  display?: number;
+}) {
+  const targets = resolveSearchTargets(params.target);
+  const settled = await Promise.allSettled(
+    targets.map((target) =>
+      searchLawApi({
+        target,
+        query: params.query,
+        page: params.page,
+        display: params.display,
+      })
+    )
+  );
+
+  const results = settled.flatMap((result, index) =>
+    result.status === "fulfilled"
+      ? [
+          {
+            target: targets[index],
+            requestUrl: result.value.requestUrl,
+            items: result.value.items.map((item) => ({
+              ...item,
+              target: item.target || targets[index],
+            })),
+          },
+        ]
+      : []
+  );
+
+  if (results.length === 0) {
+    const firstError = settled.find((result) => result.status === "rejected");
+    throw (
+      (firstError && firstError.status === "rejected" ? firstError.reason : null) ??
+      new Error("Law API request failed.")
+    );
+  }
+
+  return {
+    targets,
+    requestUrls: results.map((result) => ({
+      target: result.target,
+      requestUrl: result.requestUrl,
+    })),
+    items: results.flatMap((result) => result.items),
   };
 }
 

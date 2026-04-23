@@ -1,18 +1,10 @@
 import { searchCatalog } from "@/lib/dapa-catalog";
 import { jsonResponse, optionsResponse } from "@/lib/http";
-import { normalizeTarget, searchLawApi, selectBestSearchItem } from "@/lib/law-api";
+import { searchLawApiMultiTarget, selectBestSearchItem } from "@/lib/law-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const preferredRegion = "icn1";
-
-function normalizeName(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/[\u300C\u300D\u300E\u300F()[\]{}'".,]/g, "")
-    .trim();
-}
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -46,10 +38,6 @@ export async function GET(req: Request) {
     type,
     limit,
   });
-  const target =
-    requestedTarget && requestedTarget !== "auto"
-      ? normalizeTarget(requestedTarget)
-      : catalog.items[0]?.target ?? "law";
 
   if (catalogOnly) {
     return jsonResponse({
@@ -61,16 +49,13 @@ export async function GET(req: Request) {
   }
 
   try {
-    const upstream = await searchLawApi({
-      target,
+    const upstream = await searchLawApiMultiTarget({
+      target: requestedTarget,
       query,
       page: Number.isFinite(page) && page > 0 ? page : 1,
       display: Number.isFinite(display) && display > 0 ? display : 10,
     });
-    const wantedName = normalizeName(catalog.items[0]?.name ?? catalog.items[0]?.query ?? query);
-    const bestItem =
-      upstream.items.find((item) => normalizeName(item.name) === wantedName) ??
-      selectBestSearchItem(upstream.items, catalog.items[0]?.query ?? query);
+    const bestItem = selectBestSearchItem(upstream.items, query);
     const items = bestItem
       ? [bestItem, ...upstream.items.filter((item) => item !== bestItem)]
       : upstream.items;
@@ -78,10 +63,10 @@ export async function GET(req: Request) {
     return jsonResponse({
       ok: true,
       query,
-      target,
+      target: bestItem?.target ?? requestedTarget ?? "auto",
       catalog,
       upstream: {
-        requestUrl: upstream.requestUrl,
+        requestUrls: upstream.requestUrls,
         items,
       },
     });
@@ -90,7 +75,7 @@ export async function GET(req: Request) {
       {
         ok: false,
         query,
-        target,
+        target: requestedTarget ?? "auto",
         catalog,
         error: "Failed to call the National Law Information search API.",
         message: error instanceof Error ? error.message : "unknown error",
