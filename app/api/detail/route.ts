@@ -56,7 +56,7 @@ export async function GET(req: Request) {
     let detailMst = mst;
     let selectedSearchItem = null;
 
-    if (!detailId && !detailMst) {
+    if (query) {
       const search = await searchLawApi({
         target,
         query: catalogMatch?.query ?? query,
@@ -66,22 +66,21 @@ export async function GET(req: Request) {
       selectedSearchItem =
         search.items.find((item) => normalizeName(item.name) === wantedName) ??
         selectBestSearchItem(search.items, catalogMatch?.query ?? query);
-      detailId = selectedSearchItem?.id ?? "";
-      detailMst = selectedSearchItem?.mst ?? "";
+      detailId = selectedSearchItem?.id ?? detailId;
+      detailMst = selectedSearchItem?.mst ?? detailMst;
+    }
 
-      if (!detailId && !detailMst) {
-        return jsonResponse(
-          {
-            ok: false,
-            error: "Could not find an ID or MST for detail lookup from search results.",
-            query,
-            target,
-            catalogMatch,
-            searchItems: search.items,
-          },
-          { status: 404 }
-        );
-      }
+    if (!detailId && !detailMst) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "Could not find an ID or MST for detail lookup from search results.",
+          query,
+          target,
+          catalogMatch,
+        },
+        { status: 404 }
+      );
     }
 
     const detail = await getLawDetail({
