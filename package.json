@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "catalog:admin-rules": "node scripts/collect-dapa-admin-rules.mjs"
   },
   "dependencies": {
     "fast-xml-parser": "^5.6.0",

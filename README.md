@@ -1,66 +1,63 @@
 # dapa-law
 
-`dapa-law` is a Next.js 16 project for building a law-focused web application.  
-The repository is currently in its setup phase, with the base App Router project created and `fast-xml-parser` added for future XML-based data ingestion or processing.
+Next.js/Vercel proxy for GPTs Actions that searches DAPA law catalogs and retrieves live text from the Korean National Law Information OPEN API.
 
-## Current Status
+## Data
 
-- Next.js App Router project initialized
-- TypeScript and ESLint configured
-- Tailwind CSS v4 included
-- `fast-xml-parser` installed
-- GitHub repository connected: [ai-studying-man/dapa-law](https://github.com/ai-studying-man/dapa-law)
+- `data/dapa-defense-laws.json`: 25 DAPA defense-law entries from the DAPA website.
+- `data/dapa-admin-rules.json`: 2,587 DAPA administrative-rule rows, plus 1,754 latest unique titles.
 
-## Tech Stack
-
-- Next.js 16
-- React 19
-- TypeScript 5
-- Tailwind CSS 4
-- fast-xml-parser
-
-## Getting Started
-
-Install dependencies if needed:
+Refresh administrative rules:
 
 ```bash
-npm install
+npm run catalog:admin-rules
 ```
 
-Run the development server:
+## API
+
+- `GET /api/catalog`: Search the local DAPA catalog.
+- `GET /api/search`: Search the local catalog and, unless `catalog_only=true`, proxy `lawSearch.do`.
+- `GET /api/detail`: Resolve a catalog item and proxy `lawService.do`; optionally pass `article=10` or `article=제10조`.
+- `GET /api/openapi`: OpenAPI 3.1 schema for GPTs Actions import.
+- `GET /api/health`: Health and catalog summary.
+
+## Environment
+
+Set this on Vercel:
 
 ```bash
-npm run dev
+LAW_API_KEY=your-national-law-open-api-oc
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Available Scripts
+Alternative name:
 
 ```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
+LAW_API_OC=your-national-law-open-api-oc
 ```
 
-## Project Structure
+Optional:
+
+```bash
+LAW_API_BASE=https://www.law.go.kr/DRF
+```
+
+## GPTs Actions
+
+Deploy to Vercel, then import this schema URL in GPTs Actions:
 
 ```text
-app/          App Router pages and layouts
-public/       Static assets
-package.json  Project scripts and dependencies
+https://your-vercel-domain.vercel.app/api/openapi
 ```
 
-## Notes
+Recommended lookup flow:
 
-- The current homepage still uses the default starter UI from `create-next-app`.
-- The site metadata in `app/layout.tsx` is also still set to the default values.
-- `fast-xml-parser` is ready to use once XML import or transformation logic is added.
+1. Call `/api/catalog` to narrow to DAPA defense laws or administrative rules.
+2. Call `/api/detail` with `query` and optional `article` for live law text.
+3. Use `/api/search` when broader National Law Information search results are needed.
 
-## Next Steps
+## Local Checks
 
-- Replace the starter homepage with the actual DAPA law service UI
-- Update metadata, branding, and content
-- Define how legal or policy data will be fetched, parsed, and displayed
-- Add the first domain-specific pages and components
+```bash
+npm run lint
+npm run build
+```

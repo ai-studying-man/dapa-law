@@ -1,0 +1,211 @@
+{
+  "source": {
+    "name": "방위사업청 방위사업법령 - 방위사업 관련",
+    "url": "https://www.dapa.go.kr/dapa/page/selectPage.do?menuSeq=3087&pageSeq=3246",
+    "selector": "#cts0210",
+    "sectionTitle": "방위사업 관련",
+    "collectedAt": "2026-04-23"
+  },
+  "items": [
+    {
+      "section": "방위사업 관련",
+      "type": "법령",
+      "name": "방위사업법",
+      "query": "방위사업법",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%AC%EC%97%85%EB%B2%95"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "법령",
+      "name": "군용항공기 비행안전성 인증에 관한 법률",
+      "query": "군용항공기 비행안전성 인증에 관한 법률",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=%EA%B5%B0%EC%9A%A9%ED%95%AD%EA%B3%B5%EA%B8%B0+%EB%B9%84%ED%96%89%EC%95%88%EC%A0%84%EC%84%B1+%EC%9D%B8%EC%A6%9D%EC%97%90+%EA%B4%80%ED%95%9C+%EB%B2%95%EB%A5%A0"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "법령",
+      "name": "방위산업기술 보호법",
+      "query": "방위산업기술 보호법",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EA%B8%B0%EC%88%A0%EB%B3%B4%ED%98%B8%EB%B2%95"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "법령",
+      "name": "국방과학기술혁신 촉진법",
+      "query": "국방과학기술혁신 촉진법",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%AD%EB%B0%A9%EA%B3%BC%ED%95%99%EA%B8%B0%EC%88%A0%ED%98%81%EC%8B%A0%EC%B4%89%EC%A7%84%EB%B2%95"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "법령",
+      "name": "방위산업 발전 및 지원에 관한 법률",
+      "query": "방위산업 발전 및 지원에 관한 법률",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EB%B0%9C%EC%A0%84%EB%B0%8F%EC%A7%80%EC%9B%90%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "법령",
+      "name": "국방과학연구소법",
+      "query": "국방과학연구소법",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%AD%EB%B0%A9%EA%B3%BC%ED%95%99%EC%97%B0%EA%B5%AC%EC%86%8C%EB%B2%95"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "법령",
+      "name": "민·군기술협력사업 촉진법",
+      "query": "민·군기술협력사업 촉진법",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%AF%BC%E3%86%8D%EA%B5%B0%EA%B8%B0%EC%88%A0%ED%98%91%EB%A0%A5%EC%82%AC%EC%97%85%EC%B4%89%EC%A7%84%EB%B2%95"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행령",
+      "name": "방위사업법 시행령",
+      "query": "방위사업법 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%AC%EC%97%85%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행령",
+      "name": "방위사업청과 그 소속기관 직제",
+      "query": "방위사업청과 그 소속기관 직제",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%AC%EC%97%85%EC%B2%AD%EA%B3%BC%EA%B7%B8%EC%86%8C%EC%86%8D%EA%B8%B0%EA%B4%80%EC%A7%81%EC%A0%9C"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행령",
+      "name": "군용항공기 비행안정성 인증에 관한 법률 시행령",
+      "query": "군용항공기 비행안정성 인증에 관한 법률 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsInfoP.do?lsId=011058&ancYnChk=0#0000"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행령",
+      "name": "방위산업기술 보호법 시행령",
+      "query": "방위산업기술 보호법 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EA%B8%B0%EC%88%A0%EB%B3%B4%ED%98%B8%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행령",
+      "name": "국방과학연구소법 시행령",
+      "query": "국방과학연구소법 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%AD%EB%B0%A9%EA%B3%BC%ED%95%99%EC%97%B0%EA%B5%AC%EC%86%8C%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행령",
+      "name": "민·군기술협력사업 촉진법 시행령",
+      "query": "민·군기술협력사업 촉진법 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%AF%BC%E3%86%8D%EA%B5%B0%EA%B8%B0%EC%88%A0%ED%98%91%EB%A0%A5%EC%82%AC%EC%97%85%EC%B4%89%EC%A7%84%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행령",
+      "name": "국방과학기술혁신 촉진법 시행령",
+      "query": "국방과학기술혁신 촉진법 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=%EA%B5%AD%EB%B0%A9%EA%B3%BC%ED%95%99%EA%B8%B0%EC%88%A0%ED%98%81%EC%8B%A0+%EC%B4%89%EC%A7%84%EB%B2%95+%EC%8B%9C%ED%96%89%EB%A0%B9#undefined"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행령",
+      "name": "방위산업발전 및 지원에 관한 법률 시행령",
+      "query": "방위산업발전 및 지원에 관한 법률 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EB%B0%9C%EC%A0%84+%EB%B0%8F+%EC%A7%80%EC%9B%90%EC%97%90+%EA%B4%80%ED%95%9C+%EB%B2%95%EB%A5%A0+%EC%8B%9C%ED%96%89%EB%A0%B9#undefined"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "방위사업법 시행규칙",
+      "query": "방위사업법 시행규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%AC%EC%97%85%EB%B2%95%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "방위사업청과 그 소속기관 직제 시행규칙",
+      "query": "방위사업청과 그 소속기관 직제 시행규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%AC%EC%97%85%EC%B2%AD%EA%B3%BC%EA%B7%B8%EC%86%8C%EC%86%8D%EA%B8%B0%EA%B4%80%EC%A7%81%EC%A0%9C%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "군용항공기 비행안전성 인증에 관한 법률 시행규칙",
+      "query": "군용항공기 비행안전성 인증에 관한 법률 시행규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%B0%EC%9A%A9%ED%95%AD%EA%B3%B5%EA%B8%B0%EB%B9%84%ED%96%89%EC%95%88%EC%A0%84%EC%84%B1%EC%9D%B8%EC%A6%9D%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "국방과학기술혁신 촉진법 시행규칙",
+      "query": "국방과학기술혁신 촉진법 시행규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=%EA%B5%AD%EB%B0%A9%EA%B3%BC%ED%95%99%EA%B8%B0%EC%88%A0%ED%98%81%EC%8B%A0+%EC%B4%89%EC%A7%84%EB%B2%95+%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99#undefined"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "방위산업발전 및 지원에 관한 법률 시행규칙",
+      "query": "방위산업발전 및 지원에 관한 법률 시행규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EB%B0%9C%EC%A0%84+%EB%B0%8F+%EC%A7%80%EC%9B%90%EC%97%90+%EA%B4%80%ED%95%9C+%EB%B2%95%EB%A5%A0+%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99#undefined"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "방위산업에 관한 계약사무 처리규칙",
+      "query": "방위산업에 관한 계약사무 처리규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EC%97%90+%EA%B4%80%ED%95%9C+%EA%B3%84%EC%95%BD%EC%82%AC%EB%AC%B4+%EC%B2%98%EB%A6%AC%EA%B7%9C%EC%B9%99#undefined"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "방산원가대상물자의 원가계산에 관한 규칙",
+      "query": "방산원가대상물자의 원가계산에 관한 규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=%EB%B0%A9%EC%82%B0%EC%9B%90%EA%B0%80%EB%8C%80%EC%83%81%EB%AC%BC%EC%9E%90%EC%9D%98+%EC%9B%90%EA%B0%80%EA%B3%84%EC%82%B0%EC%97%90+%EA%B4%80%ED%95%9C+%EA%B7%9C%EC%B9%99#undefined"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "방위산업에 관한 착수금 및 중도금 지급규칙",
+      "query": "방위산업에 관한 착수금 및 중도금 지급규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EC%97%90+%EA%B4%80%ED%95%9C+%EC%B0%A9%EC%88%98%EA%B8%88+%EB%B0%8F+%EC%A4%91%EB%8F%84%EA%B8%88+%EC%A7%80%EA%B8%89%EA%B7%9C%EC%B9%99#undefined"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "방위사업감독관 직무 등에 관한 규칙",
+      "query": "방위사업감독관 직무 등에 관한 규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=%EB%B0%A9%EC%9C%84%EC%82%AC%EC%97%85%EA%B0%90%EB%8F%85%EA%B4%80+%EC%A7%81%EB%AC%B4+%EB%93%B1%EC%97%90+%EA%B4%80%ED%95%9C+%EA%B7%9C%EC%B9%99#undefined"
+    },
+    {
+      "section": "방위사업 관련",
+      "type": "시행규칙",
+      "name": "방위산업기술 보호법 시행규칙",
+      "query": "방위산업기술 보호법 시행규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EA%B8%B0%EC%88%A0%EB%B3%B4%ED%98%B8%EB%B2%95%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99"
+    }
+  ]
+}

@@ -1,7 +1,11 @@
+import { getCatalogSummary } from "@/lib/dapa-catalog";
+import { jsonResponse } from "@/lib/http";
+
 export async function GET() {
-  return Response.json({
+  return jsonResponse({
     ok: true,
-    service: "law-gpt-proxy",
-    defaultAgency: process.env.DEFAULT_AGENCY || "방위사업청",
+    service: "dapa-law-gpt-proxy",
+    lawApiConfigured: Boolean(process.env.LAW_API_KEY || process.env.LAW_API_OC),
+    catalog: getCatalogSummary(),
   });
 }
