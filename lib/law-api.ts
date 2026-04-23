@@ -412,7 +412,11 @@ function getLawApiBases() {
     return [process.env.LAW_API_BASE];
   }
 
-  return ["https://www.law.go.kr/DRF", "http://www.law.go.kr/DRF"];
+  return [
+    "https://law.go.kr/DRF",
+    "http://law.go.kr/DRF",
+    "http://www.law.go.kr/DRF",
+  ];
 }
 
 function addCommonParams(url: URL) {
@@ -490,6 +494,7 @@ function extractApiError(parsed: Record<string, unknown>) {
 async function fetchXml(url: URL) {
   const response = await fetch(url, {
     cache: "no-store",
+    signal: AbortSignal.timeout(15000),
     headers: {
       Accept: "application/xml, text/xml, */*",
       "User-Agent": "Mozilla/5.0 (compatible; DAPA-Law-Proxy/1.0)",
@@ -517,9 +522,11 @@ async function fetchXmlWithFallback(
   params: Record<string, string>
 ) {
   let lastError: unknown;
+  const attempts: string[] = [];
 
   for (const base of getLawApiBases()) {
     const url = buildUrl(base, path, params);
+    attempts.push(redactApiKey(url));
 
     try {
       const result = await fetchXml(url);
@@ -532,7 +539,12 @@ async function fetchXmlWithFallback(
     }
   }
 
-  throw lastError instanceof Error ? lastError : new Error("Law API request failed.");
+  const message =
+    lastError instanceof Error
+      ? `${lastError.message} | attempts=${attempts.join(", ")}`
+      : `Law API request failed. | attempts=${attempts.join(", ")}`;
+
+  throw new Error(message);
 }
 
 function flattenText(value: unknown): string[] {
