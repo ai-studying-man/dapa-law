@@ -96,8 +96,12 @@ export function normalizeTarget(value?: string | null): LawTarget {
   return TARGET_ALIASES[value] ?? "law";
 }
 
-function getLawApiBase() {
-  return process.env.LAW_API_BASE || "https://www.law.go.kr/DRF";
+function getLawApiBases() {
+  if (process.env.LAW_API_BASE) {
+    return [process.env.LAW_API_BASE];
+  }
+
+  return ["https://www.law.go.kr/DRF", "http://www.law.go.kr/DRF"];
 }
 
 function addCommonParams(url: URL) {
@@ -108,8 +112,12 @@ function addCommonParams(url: URL) {
   }
 }
 
-function buildUrl(path: "lawSearch.do" | "lawService.do", params: Record<string, string>) {
-  const url = new URL(`${getLawApiBase()}/${path}`);
+function buildUrl(
+  base: string,
+  path: "lawSearch.do" | "lawService.do",
+  params: Record<string, string>
+) {
+  const url = new URL(`${base}/${path}`);
 
   Object.entries(params).forEach(([key, value]) => {
     if (value) {
@@ -193,6 +201,29 @@ async function fetchXml(url: URL) {
   return { parsed, xml };
 }
 
+async function fetchXmlWithFallback(
+  path: "lawSearch.do" | "lawService.do",
+  params: Record<string, string>
+) {
+  let lastError: unknown;
+
+  for (const base of getLawApiBases()) {
+    const url = buildUrl(base, path, params);
+
+    try {
+      const result = await fetchXml(url);
+      return {
+        ...result,
+        requestUrl: redactApiKey(url),
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Law API request failed.");
+}
+
 function asRecordArray(value: unknown): Record<string, unknown>[] {
   if (!value) {
     return [];
@@ -218,7 +249,7 @@ function extractDetailIdFromLink(item: Record<string, unknown>) {
   }
 
   try {
-    const url = new URL(detailLink, getLawApiBase());
+    const url = new URL(detailLink, getLawApiBases()[0]);
     return url.searchParams.get("ID")?.trim() ?? "";
   } catch {
     return "";
@@ -378,7 +409,7 @@ export async function searchLawApi(params: {
   page?: number;
   display?: number;
 }) {
-  const url = buildUrl("lawSearch.do", {
+  const { parsed, requestUrl } = await fetchXmlWithFallback("lawSearch.do", {
     target: params.target,
     type: "XML",
     query: params.query,
@@ -386,10 +417,9 @@ export async function searchLawApi(params: {
     display: String(params.display ?? 10),
     sort: "lasc",
   });
-  const { parsed } = await fetchXml(url);
 
   return {
-    requestUrl: redactApiKey(url),
+    requestUrl,
     parsed,
     items: normalizeSearchItems(parsed),
   };
@@ -400,16 +430,15 @@ export async function getLawDetail(params: {
   id?: string;
   mst?: string;
 }) {
-  const url = buildUrl("lawService.do", {
+  const { parsed, requestUrl } = await fetchXmlWithFallback("lawService.do", {
     target: params.target,
     type: "XML",
     ID: params.id ?? "",
     MST: params.mst ?? "",
   });
-  const { parsed } = await fetchXml(url);
 
   return {
-    requestUrl: redactApiKey(url),
+    requestUrl,
     parsed,
   };
 }

@@ -4,6 +4,7 @@ import { normalizeTarget, searchLawApi, selectBestSearchItem } from "@/lib/law-a
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const preferredRegion = "icn1";
 
 function normalizeName(value: string) {
   return value
