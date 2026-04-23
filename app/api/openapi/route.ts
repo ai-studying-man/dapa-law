@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     openapi: "3.1.0",
     info: {
       title: "DAPA Law Vercel Wrapper API",
-      version: "2.1.0",
+      version: "2.2.0",
       description:
         "Vercel wrapper for selected National Law Information APIs used by the DAPA chatbot. This schema excludes unrelated guide-list categories and keeps appendix or form lookups search-only.",
     },
@@ -85,7 +85,7 @@ export async function GET(req: Request) {
           operationId: "getLawOpenDataDocument",
           summary: "Get document detail for a selected category",
           description:
-            "Retrieves live detail text from the National Law Information API. Appendix categories are not supported here because they are search-only. Use query whenever possible and article when a specific statute article is needed.",
+            "Retrieves live detail text from the National Law Information API. Appendix categories are not supported here because they are search-only. Responses are compact by default to avoid oversized action payloads. Use query whenever possible and article when a specific statute article is needed.",
           parameters: [
             {
               name: "category",
@@ -122,6 +122,13 @@ export async function GET(req: Request) {
               schema: { type: "string" },
               description:
                 "Optional article selector for statute-like texts. Examples: 10, 10jo, Article 10.",
+            },
+            {
+              name: "include_raw",
+              in: "query",
+              schema: { type: "boolean", default: false },
+              description:
+                "Returns the full parsed upstream payload only when explicitly needed. Leave false for GPT Actions to avoid oversized responses.",
             },
           ],
           responses: {

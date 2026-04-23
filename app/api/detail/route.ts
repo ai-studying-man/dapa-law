@@ -13,6 +13,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const preferredRegion = "icn1";
 
+function truncateText(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength)}\n...[truncated]`;
+}
+
 export async function OPTIONS() {
   return optionsResponse();
 }
@@ -27,6 +35,7 @@ export async function GET(req: Request) {
   const id = searchParams.get("id")?.trim() || "";
   const mst = searchParams.get("mst")?.trim() || "";
   const article = searchParams.get("article")?.trim() || "";
+  const includeRaw = searchParams.get("include_raw") === "true";
   const requestedTarget =
     searchParams.get("category")?.trim() || searchParams.get("target")?.trim() || "auto";
   const catalogMatch = query ? findBestCatalogMatch(query) : null;
@@ -100,6 +109,12 @@ export async function GET(req: Request) {
       query: detailQuery,
     });
     const extractedArticle = extractArticle(detail.parsed, article);
+    const normalized = {
+      ...detail.normalized,
+      bodyText: extractedArticle
+        ? ""
+        : truncateText(detail.normalized.bodyText, 4000),
+    };
 
     return jsonResponse({
       ok: true,
@@ -112,8 +127,8 @@ export async function GET(req: Request) {
       selectedSearchItem,
       requestUrl: detail.requestUrl,
       article: extractedArticle,
-      normalized: detail.normalized,
-      data: detail.parsed,
+      normalized,
+      data: includeRaw ? detail.parsed : undefined,
     });
   } catch (error) {
     return jsonResponse(
