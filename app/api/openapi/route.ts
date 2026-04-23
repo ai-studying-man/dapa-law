@@ -1,5 +1,21 @@
 import { jsonResponse } from "@/lib/http";
 
+const CATEGORY_ENUM = [
+  "auto",
+  "law",
+  "admrul",
+  "ordin",
+  "prec",
+  "detc",
+  "expc",
+  "decc",
+  "trty",
+  "lstrm",
+  "law_appendix",
+  "admrul_appendix",
+  "ordin_appendix",
+] as const;
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -9,10 +25,10 @@ export async function GET(req: Request) {
   return jsonResponse({
     openapi: "3.1.0",
     info: {
-      title: "DAPA Law GPT Proxy",
-      version: "1.0.0",
+      title: "DAPA Law Vercel Wrapper API",
+      version: "2.0.0",
       description:
-        "국가법령정보 OPEN API를 우선 조회하고, 방위사업청 카탈로그 JSON은 보조 검색 및 참고 정보로만 사용하는 GPT Actions용 프록시 API입니다.",
+        "Vercel wrapper for selected National Law Information APIs. This schema intentionally excludes unrelated categories and central-agency interpretation feeds that are not needed for DAPA.",
     },
     servers: [
       {
@@ -20,135 +36,108 @@ export async function GET(req: Request) {
       },
     ],
     paths: {
-      "/api/catalog": {
-        get: {
-          operationId: "listDapaLawCatalog",
-          summary: "방위사업청 수집 카탈로그만 검색",
-          parameters: [
-            {
-              name: "query",
-              in: "query",
-              schema: { type: "string" },
-              description: "검색어. 예: 방위사업관리규정, 방위사업법",
-            },
-            {
-              name: "source",
-              in: "query",
-              schema: {
-                type: "string",
-                enum: ["all", "defense_laws", "admin_rules"],
-                default: "all",
-              },
-            },
-            {
-              name: "type",
-              in: "query",
-              schema: { type: "string" },
-              description:
-                "법령, 시행령, 시행규칙, 훈령, 예규, 고시/공고, 매뉴얼, 기타/회계예규",
-            },
-            {
-              name: "limit",
-              in: "query",
-              schema: { type: "integer", default: 50, maximum: 100 },
-            },
-          ],
-          responses: {
-            "200": {
-              description: "카탈로그 검색 결과",
-            },
-          },
-        },
-      },
       "/api/search": {
         get: {
-          operationId: "searchDapaLaw",
-          summary: "국가법령정보 OPEN API 우선 검색",
+          operationId: "searchNationalLawDocuments",
+          summary: "Search selected National Law Information categories",
+          description:
+            "Searches only the allowed categories: current law, administrative rules, local ordinances, precedents, Constitutional Court decisions, legal interpretations, administrative appeal decisions, treaties, legal terms, and appendix/form catalogs.",
           parameters: [
             {
               name: "query",
               in: "query",
               required: true,
               schema: { type: "string" },
-              description: "법령명, 행정규칙명, 자치법규명 또는 일반 검색어",
+              description: "Search keyword or exact title.",
             },
             {
-              name: "target",
+              name: "category",
               in: "query",
               schema: {
                 type: "string",
-                enum: ["auto", "law", "admrul", "ordin", "admin_rule", "ordinance"],
+                enum: CATEGORY_ENUM,
                 default: "auto",
               },
               description:
-                "auto이면 국가법령정보 API의 law, admrul, ordin을 모두 조회한 뒤 가장 적합한 결과를 우선 반환합니다.",
+                "Use auto to search across the main text categories. Appendix categories are search-only.",
             },
             {
-              name: "catalog_only",
+              name: "page",
               in: "query",
-              schema: { type: "boolean", default: false },
-              description:
-                "true이면 국가법령정보 API를 호출하지 않고 카탈로그 JSON만 검색합니다. 기본값 false에서는 OPEN API가 우선입니다.",
+              schema: { type: "integer", default: 1, minimum: 1 },
             },
             {
               name: "display",
               in: "query",
-              schema: { type: "integer", default: 10, maximum: 50 },
+              schema: { type: "integer", default: 10, minimum: 1, maximum: 50 },
+              description: "Maximum items per upstream category request.",
             },
           ],
           responses: {
             "200": {
-              description: "검색 결과",
+              description: "Search results",
             },
           },
         },
       },
       "/api/detail": {
         get: {
-          operationId: "getDapaLawDetail",
-          summary: "국가법령정보 OPEN API 본문/조문 우선 조회",
+          operationId: "getNationalLawDocumentDetail",
+          summary: "Get document detail for a selected category",
+          description:
+            "Retrieves live detail text from the National Law Information API. Appendix categories are not supported here because they are search-only.",
           parameters: [
+            {
+              name: "category",
+              in: "query",
+              schema: {
+                type: "string",
+                enum: CATEGORY_ENUM.filter((value) => value !== "auto"),
+                default: "law",
+              },
+            },
             {
               name: "query",
               in: "query",
               schema: { type: "string" },
               description:
-                "법령명 또는 행정규칙명. query가 있으면 서버가 국가법령정보 API에서 정식 ID를 다시 찾아 본문을 조회합니다.",
-            },
-            {
-              name: "target",
-              in: "query",
-              schema: {
-                type: "string",
-                enum: ["auto", "law", "admrul", "ordin", "admin_rule", "ordinance"],
-                default: "auto",
-              },
-              description:
-                "auto이면 국가법령정보 API의 law, admrul, ordin을 모두 조회한 뒤 가장 적합한 결과의 본문을 엽니다.",
-            },
-            {
-              name: "article",
-              in: "query",
-              schema: { type: "string" },
-              description: "조문 번호. 예: 10, 제10조",
+                "Preferred input. The wrapper will search first, pick the best match, then fetch live detail.",
             },
             {
               name: "id",
               in: "query",
               schema: { type: "string" },
-              description:
-                "국가법령정보 OPEN API의 정식 ID를 알고 있을 때만 사용합니다. query가 함께 있으면 서버가 query 기준 검색 결과를 우선 사용합니다.",
+              description: "Direct upstream identifier when already known.",
             },
             {
               name: "mst",
               in: "query",
               schema: { type: "string" },
-              description: "국가법령정보 OPEN API의 MST를 알고 있을 때만 사용합니다.",
+              description:
+                "Secondary identifier such as MST or alternate ID, depending on category.",
+            },
+            {
+              name: "article",
+              in: "query",
+              schema: { type: "string" },
+              description:
+                "Optional article selector for statute-like texts. Examples: 10, 10조, 제10조.",
             },
           ],
           responses: {
             "200": {
-              description: "본문 조회 결과",
+              description: "Live detail result",
+            },
+          },
+        },
+      },
+      "/api/health": {
+        get: {
+          operationId: "getDapaLawWrapperHealth",
+          summary: "Health check",
+          responses: {
+            "200": {
+              description: "Service health",
             },
           },
         },

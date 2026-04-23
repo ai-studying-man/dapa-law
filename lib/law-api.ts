@@ -1,18 +1,360 @@
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 
-export type LawTarget = "law" | "admrul" | "ordin";
+export type LawTarget =
+  | "law"
+  | "admrul"
+  | "ordin"
+  | "prec"
+  | "detc"
+  | "expc"
+  | "decc"
+  | "trty"
+  | "lstrm"
+  | "law_appendix"
+  | "admrul_appendix"
+  | "ordin_appendix";
+
+export type RequestedTarget = LawTarget | "auto";
 
 export type LawSearchItem = {
   target: LawTarget;
+  upstreamTarget: string;
   id: string;
   mst: string;
+  alternateId: string;
   name: string;
   type: string;
   effectiveDate: string;
   promulgationDate: string;
   department: string;
+  detailUrl: string;
+  detailQuery: string;
+  searchOnly: boolean;
   raw: Record<string, unknown>;
 };
+
+type TargetConfig = {
+  label: string;
+  upstreamTarget: string;
+  searchOnly?: boolean;
+  searchIdKeys: string[];
+  detailIdKeys?: string[];
+  mstKeys?: string[];
+  alternateIdKeys?: string[];
+  nameKeys: string[];
+  typeKeys?: string[];
+  effectiveDateKeys?: string[];
+  promulgationDateKeys?: string[];
+  departmentKeys?: string[];
+  detailLinkKeys?: string[];
+  bodyKeys?: string[];
+  titleKeys?: string[];
+  detailLookup: "id_or_mst" | "id_or_alternate" | "id" | "query";
+};
+
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "",
+  trimValues: true,
+});
+
+const KO = {
+  law: "\uBC95\uB839",
+  adminRule: "\uD589\uC815\uADDC\uCE59",
+  ordinance: "\uC790\uCE58\uBC95\uADDC",
+  caseLaw: "\uD310\uB840",
+  constitutionalCase: "\uD5CC\uC7AC\uACB0\uC815\uB840",
+  legalInterpretation: "\uBC95\uB839\uD574\uC11D\uB840",
+  adminAppeal: "\uD589\uC815\uC2EC\uD310\uB840",
+  treaty: "\uC870\uC57D",
+  legalTerm: "\uBC95\uB839\uC6A9\uC5B4",
+  appendix: "\uBCC4\uD45C",
+  form: "\uC11C\uC2DD",
+  lawSearchRoot: "LawSearch",
+  adminRuleSearchRoot: "AdmRulSearch",
+  ordinanceSearchRoot: "OrdinSearch",
+  articleNumber: "\uC870\uBB38\uBC88\uD638",
+  articleBranchNumber: "\uC870\uBB38\uAC00\uC9C0\uBC88\uD638",
+  articleKey: "\uC870\uBB38\uD0A4",
+  articleNo: "\uC870\uBC88\uD638",
+  article: "\uC870",
+  articleTitle: "\uC870\uBB38\uC81C\uBAA9",
+  articleText: "\uC870\uBB38\uB0B4\uC6A9",
+  title: "\uC81C\uBAA9",
+};
+
+const TARGET_CONFIG: Record<LawTarget, TargetConfig> = {
+  law: {
+    label: "Current law",
+    upstreamTarget: "eflaw",
+    searchIdKeys: ["\uBC95\uB839ID", "ID", "id"],
+    detailIdKeys: ["\uBC95\uB839ID", "ID", "id"],
+    mstKeys: ["\uBC95\uB839\uC77C\uB828\uBC88\uD638", "MST", "mst"],
+    nameKeys: ["\uBC95\uB839\uBA85\uD55C\uAE00", "\uBC95\uB839\uBA85", "lawNm"],
+    typeKeys: ["\uBC95\uB839\uAD6C\uBD84\uBA85", "\uBC95\uC885\uAD6C\uBD84\uBA85"],
+    effectiveDateKeys: ["\uC2DC\uD589\uC77C\uC790", "\uC2DC\uD589\uC77C"],
+    promulgationDateKeys: ["\uACF5\uD3EC\uC77C\uC790", "\uACF5\uD3EC\uC77C"],
+    departmentKeys: ["\uC18C\uAD00\uBD80\uCC98\uBA85", "\uC18C\uAD00\uBD80\uCC98"],
+    detailLinkKeys: ["\uBC95\uB839\uC0C1\uC138\uB9C1\uD06C"],
+    bodyKeys: [
+      "\uC870\uBB38\uB0B4\uC6A9",
+      "\uD56D\uB0B4\uC6A9",
+      "\uD638\uB0B4\uC6A9",
+      "\uBAA9\uB0B4\uC6A9",
+      "\uBD80\uCE59\uB0B4\uC6A9",
+      "\uBCC4\uD45C\uB0B4\uC6A9",
+      "\uAC1C\uC815\uBB38\uB0B4\uC6A9",
+      "\uC81C\uAC1C\uC815\uC774\uC720\uB0B4\uC6A9",
+    ],
+    titleKeys: ["\uBC95\uB839\uBA85_\uD55C\uAE00", "\uBC95\uB839\uBA85\uD55C\uAE00", "\uBC95\uB839\uBA85"],
+    detailLookup: "id_or_mst",
+  },
+  admrul: {
+    label: "Administrative rule",
+    upstreamTarget: "admrul",
+    searchIdKeys: ["\uD589\uC815\uADDC\uCE59\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    detailIdKeys: ["\uD589\uC815\uADDC\uCE59\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    alternateIdKeys: ["\uD589\uC815\uADDC\uCE59ID", "LID", "lid"],
+    nameKeys: ["\uD589\uC815\uADDC\uCE59\uBA85"],
+    typeKeys: ["\uD589\uC815\uADDC\uCE59\uC885\uB958", "\uD589\uC815\uADDC\uCE59\uAD6C\uBD84\uBA85"],
+    effectiveDateKeys: ["\uC2DC\uD589\uC77C\uC790"],
+    promulgationDateKeys: ["\uBC1C\uB839\uC77C\uC790"],
+    departmentKeys: ["\uC18C\uAD00\uBD80\uCC98\uBA85"],
+    detailLinkKeys: ["\uD589\uC815\uADDC\uCE59\uC0C1\uC138\uB9C1\uD06C"],
+    bodyKeys: [
+      "\uC804\uBB38",
+      "\uBCF8\uBB38",
+      "\uC870\uBB38\uB0B4\uC6A9",
+      "\uD56D\uB0B4\uC6A9",
+      "\uD638\uB0B4\uC6A9",
+      "\uBAA9\uB0B4\uC6A9",
+      "\uBCC4\uD45C\uB0B4\uC6A9",
+    ],
+    titleKeys: ["\uD589\uC815\uADDC\uCE59\uBA85"],
+    detailLookup: "id_or_alternate",
+  },
+  ordin: {
+    label: "Local ordinance",
+    upstreamTarget: "ordin",
+    searchIdKeys: ["\uC790\uCE58\uBC95\uADDCID", "ID", "id"],
+    detailIdKeys: ["\uC790\uCE58\uBC95\uADDCID", "ID", "id"],
+    mstKeys: ["\uC790\uCE58\uBC95\uADDC\uC77C\uB828\uBC88\uD638", "MST", "mst"],
+    nameKeys: ["\uC790\uCE58\uBC95\uADDC\uBA85"],
+    typeKeys: ["\uC790\uCE58\uBC95\uADDC\uC885\uB958", "\uBC95\uB839\uC885\uB958"],
+    effectiveDateKeys: ["\uC2DC\uD589\uC77C\uC790"],
+    promulgationDateKeys: ["\uACF5\uD3EC\uC77C\uC790", "\uBC1C\uB839\uC77C\uC790"],
+    departmentKeys: ["\uAE30\uAD00\uBA85", "\uC9C0\uC790\uCCB4\uBA85"],
+    detailLinkKeys: ["\uC790\uCE58\uBC95\uADDC\uC0C1\uC138\uB9C1\uD06C"],
+    bodyKeys: [
+      "\uC804\uBB38",
+      "\uBCF8\uBB38",
+      "\uC870\uBB38\uB0B4\uC6A9",
+      "\uD56D\uB0B4\uC6A9",
+      "\uD638\uB0B4\uC6A9",
+      "\uBAA9\uB0B4\uC6A9",
+      "\uBCC4\uD45C\uB0B4\uC6A9",
+    ],
+    titleKeys: ["\uC790\uCE58\uBC95\uADDC\uBA85"],
+    detailLookup: "id_or_mst",
+  },
+  prec: {
+    label: "Precedent",
+    upstreamTarget: "prec",
+    searchIdKeys: ["\uD310\uB840\uC77C\uB828\uBC88\uD638", "\uD310\uB840\uC815\uBCF4\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    detailIdKeys: ["\uD310\uB840\uC815\uBCF4\uC77C\uB828\uBC88\uD638", "\uD310\uB840\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    nameKeys: ["\uC0AC\uAC74\uBA85"],
+    typeKeys: ["\uC0AC\uAC74\uC885\uB958\uBA85", "\uD310\uACB0\uC720\uD615"],
+    effectiveDateKeys: ["\uC120\uACE0\uC77C\uC790"],
+    promulgationDateKeys: ["\uC120\uACE0\uC77C\uC790"],
+    departmentKeys: ["\uBC95\uC6D0\uBA85"],
+    detailLinkKeys: ["\uD310\uB840\uC0C1\uC138\uB9C1\uD06C"],
+    bodyKeys: ["\uD310\uB840\uB0B4\uC6A9", "\uD310\uACB0\uC694\uC9C0", "\uD310\uC2DC\uC0AC\uD56D"],
+    titleKeys: ["\uC0AC\uAC74\uBA85"],
+    detailLookup: "id",
+  },
+  detc: {
+    label: "Constitutional Court decision",
+    upstreamTarget: "detc",
+    searchIdKeys: ["\uD5CC\uC7AC\uACB0\uC815\uB840\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    detailIdKeys: ["\uD5CC\uC7AC\uACB0\uC815\uB840\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    nameKeys: ["\uC0AC\uAC74\uBA85"],
+    typeKeys: ["\uC0AC\uAC74\uC885\uB958\uBA85"],
+    effectiveDateKeys: ["\uC885\uAD6D\uC77C\uC790"],
+    promulgationDateKeys: ["\uC885\uAD6D\uC77C\uC790"],
+    departmentKeys: ["\uC7AC\uD310\uBD80\uAD6C\uBD84\uCF54\uB4DC"],
+    detailLinkKeys: ["\uD5CC\uC7AC\uACB0\uC815\uB840\uC0C1\uC138\uB9C1\uD06C"],
+    bodyKeys: ["\uC804\uBB38", "\uACB0\uC815\uC694\uC9C0", "\uD310\uC2DC\uC0AC\uD56D", "\uC2EC\uD310\uB300\uC0C1\uC870\uBB38"],
+    titleKeys: ["\uC0AC\uAC74\uBA85"],
+    detailLookup: "id",
+  },
+  expc: {
+    label: "Legal interpretation",
+    upstreamTarget: "expc",
+    searchIdKeys: ["\uBC95\uB839\uD574\uC11D\uB840\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    detailIdKeys: ["\uBC95\uB839\uD574\uC11D\uB840\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    nameKeys: ["\uC548\uAC74\uBA85"],
+    typeKeys: ["\uD68C\uC2E0\uAE30\uAD00\uBA85"],
+    effectiveDateKeys: ["\uD68C\uC2E0\uC77C\uC790", "\uD574\uC11D\uC77C\uC790"],
+    promulgationDateKeys: ["\uD68C\uC2E0\uC77C\uC790", "\uD574\uC11D\uC77C\uC790"],
+    departmentKeys: ["\uD68C\uC2E0\uAE30\uAD00\uBA85", "\uC9C8\uC758\uAE30\uAD00\uBA85"],
+    detailLinkKeys: ["\uBC95\uB839\uD574\uC11D\uB840\uC0C1\uC138\uB9C1\uD06C"],
+    bodyKeys: [
+      "\uD68C\uB2F5",
+      "\uC774\uC720",
+      "\uBCF8\uBB38",
+      "\uAC80\uD1A0\uC758\uACAC",
+      "\uD574\uC11D\uB0B4\uC6A9",
+      "\uC9C8\uC758\uC694\uC9C0",
+    ],
+    titleKeys: ["\uC548\uAC74\uBA85"],
+    detailLookup: "id",
+  },
+  decc: {
+    label: "Administrative appeal decision",
+    upstreamTarget: "decc",
+    searchIdKeys: ["\uD589\uC815\uC2EC\uD310\uB840\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    detailIdKeys: ["\uD589\uC815\uC2EC\uD310\uB840\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    nameKeys: ["\uC0AC\uAC74\uBA85", "\uC7AC\uACB0\uB840\uBA85"],
+    typeKeys: ["\uC7AC\uACB0\uB840\uC720\uD615\uBA85", "\uC7AC\uACB0\uB840\uC720\uD615\uCF54\uB4DC"],
+    effectiveDateKeys: ["\uC758\uACB0\uC77C\uC790", "\uCC98\uBD84\uC77C\uC790"],
+    promulgationDateKeys: ["\uC758\uACB0\uC77C\uC790", "\uCC98\uBD84\uC77C\uC790"],
+    departmentKeys: ["\uC7AC\uACB0\uCCAD", "\uCC98\uBD84\uCCAD"],
+    detailLinkKeys: ["\uD589\uC815\uC2EC\uD310\uB840\uC0C1\uC138\uB9C1\uD06C"],
+    bodyKeys: ["\uC7AC\uACB0\uC694\uC9C0", "\uC774\uC720", "\uC8FC\uBB38", "\uCCAD\uAD6C\uCDE8\uC9C0"],
+    titleKeys: ["\uC0AC\uAC74\uBA85", "\uC7AC\uACB0\uB840\uBA85"],
+    detailLookup: "id",
+  },
+  trty: {
+    label: "Treaty",
+    upstreamTarget: "trty",
+    searchIdKeys: ["\uC870\uC57D\uC77C\uB828\uBC88\uD638", "\uC870\uC57DID", "ID", "id"],
+    detailIdKeys: ["\uC870\uC57DID", "\uC870\uC57D\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    nameKeys: ["\uC870\uC57D\uBA85_\uD55C\uAE00", "\uC870\uC57D\uBA85", "\uC870\uC57D\uBA85\uD55C\uAE00"],
+    typeKeys: ["\uC870\uC57D\uAD6C\uBD84\uBA85", "\uC870\uC57D\uAD6C\uBD84\uCF54\uB4DC"],
+    effectiveDateKeys: ["\uBC1C\uD6A8\uC77C\uC790", "\uCCB4\uACB0\uC77C\uC790"],
+    promulgationDateKeys: ["\uBC1C\uD6A8\uC77C\uC790", "\uCCB4\uACB0\uC77C\uC790"],
+    departmentKeys: ["\uCCB4\uACB0\uB300\uC0C1\uAD6D\uAC00\uD55C\uAE00", "\uCCB4\uACB0\uB300\uC0C1\uAD6D\uAC00"],
+    detailLinkKeys: ["\uC870\uC57D\uC0C1\uC138\uB9C1\uD06C"],
+    bodyKeys: ["\uC870\uC57D\uB0B4\uC6A9", "\uCD94\uAC00\uC815\uBCF4"],
+    titleKeys: ["\uC870\uC57D\uBA85_\uD55C\uAE00", "\uC870\uC57D\uBA85\uD55C\uAE00"],
+    detailLookup: "id",
+  },
+  lstrm: {
+    label: "Legal term",
+    upstreamTarget: "lstrm",
+    searchIdKeys: ["\uBC95\uB839\uC6A9\uC5B4ID", "lstrm id", "\uBC95\uB839\uC6A9\uC5B4 id"],
+    detailIdKeys: ["\uBC95\uB839\uC6A9\uC5B4 \uC77C\uB828\uBC88\uD638", "\uBC95\uB839\uC6A9\uC5B4ID"],
+    nameKeys: ["\uBC95\uB839\uC6A9\uC5B4\uBA85_\uD55C\uAE00", "\uBC95\uB839\uC6A9\uC5B4\uBA85"],
+    typeKeys: ["\uBC95\uB839\uC6A9\uC5B4\uCF54\uB4DC\uBA85", "\uC0AC\uC804\uAD6C\uBD84\uCF54\uB4DC"],
+    detailLinkKeys: ["\uBC95\uB839\uC6A9\uC5B4\uC0C1\uC138\uB9C1\uD06C"],
+    bodyKeys: ["\uBC95\uB839\uC6A9\uC5B4\uC815\uC758"],
+    titleKeys: ["\uBC95\uB839\uC6A9\uC5B4\uBA85_\uD55C\uAE00", "\uBC95\uB839\uC6A9\uC5B4\uBA85"],
+    detailLookup: "query",
+  },
+  law_appendix: {
+    label: "Law appendix or form",
+    upstreamTarget: "licbyl",
+    searchOnly: true,
+    searchIdKeys: ["\uBCC4\uD45C\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    nameKeys: ["\uBCC4\uD45C\uBA85"],
+    typeKeys: ["\uBCC4\uD45C\uC885\uB958", "\uBC95\uB839\uC885\uB958"],
+    promulgationDateKeys: ["\uACF5\uD3EC\uC77C\uC790"],
+    departmentKeys: ["\uC18C\uAD00\uBD80\uCC98\uBA85", "\uAD00\uB828\uBC95\uB839\uBA85"],
+    detailLinkKeys: ["\uBCC4\uD45C\uBC95\uB839\uC0C1\uC138\uB9C1\uD06C"],
+    detailLookup: "id",
+  },
+  admrul_appendix: {
+    label: "Administrative rule appendix or form",
+    upstreamTarget: "admbyl",
+    searchOnly: true,
+    searchIdKeys: ["\uBCC4\uD45C\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    nameKeys: ["\uBCC4\uD45C\uBA85"],
+    typeKeys: ["\uBCC4\uD45C\uC885\uB958", "\uD589\uC815\uADDC\uCE59\uC885\uB958"],
+    promulgationDateKeys: ["\uBC1C\uB839\uC77C\uC790"],
+    departmentKeys: ["\uC18C\uAD00\uBD80\uCC98\uBA85", "\uAD00\uB828\uD589\uC815\uADDC\uCE59\uBA85"],
+    detailLinkKeys: ["\uBCC4\uD45C\uD589\uC815\uADDC\uCE59\uC0C1\uC138\uB9C1\uD06C"],
+    detailLookup: "id",
+  },
+  ordin_appendix: {
+    label: "Local ordinance appendix or form",
+    upstreamTarget: "ordinbyl",
+    searchOnly: true,
+    searchIdKeys: ["\uBCC4\uD45C\uC77C\uB828\uBC88\uD638", "ID", "id"],
+    nameKeys: ["\uBCC4\uD45C\uBA85"],
+    typeKeys: ["\uBCC4\uD45C\uC885\uB958", "\uC790\uCE58\uBC95\uADDC\uC885\uB958"],
+    promulgationDateKeys: ["\uACF5\uD3EC\uC77C\uC790"],
+    departmentKeys: ["\uC9C0\uC790\uCCB4\uBA85", "\uAD00\uB828\uC790\uCE58\uBC95\uADDC\uBA85"],
+    detailLinkKeys: ["\uBCC4\uD45C\uC790\uCE58\uBC95\uADDC\uC0C1\uC138\uB9C1\uD06C"],
+    detailLookup: "id",
+  },
+};
+
+const TARGET_ALIASES: Record<string, RequestedTarget> = {
+  auto: "auto",
+  all: "auto",
+  law: "law",
+  eflaw: "law",
+  laws: "law",
+  [KO.law]: "law",
+  admrul: "admrul",
+  admin_rule: "admrul",
+  admin_rules: "admrul",
+  [KO.adminRule]: "admrul",
+  ordin: "ordin",
+  ordinance: "ordin",
+  ordinances: "ordin",
+  [KO.ordinance]: "ordin",
+  prec: "prec",
+  precedent: "prec",
+  precedents: "prec",
+  [KO.caseLaw]: "prec",
+  detc: "detc",
+  constitutional_case: "detc",
+  constitutional_decision: "detc",
+  [KO.constitutionalCase]: "detc",
+  expc: "expc",
+  legal_interpretation: "expc",
+  legal_interpretations: "expc",
+  [KO.legalInterpretation]: "expc",
+  decc: "decc",
+  admin_appeal: "decc",
+  admin_appeal_decision: "decc",
+  [KO.adminAppeal]: "decc",
+  trty: "trty",
+  treaty: "trty",
+  treaties: "trty",
+  [KO.treaty]: "trty",
+  lstrm: "lstrm",
+  term: "lstrm",
+  terms: "lstrm",
+  legal_term: "lstrm",
+  legal_terms: "lstrm",
+  [KO.legalTerm]: "lstrm",
+  law_appendix: "law_appendix",
+  law_form: "law_appendix",
+  licbyl: "law_appendix",
+  [KO.appendix]: "law_appendix",
+  admrul_appendix: "admrul_appendix",
+  admin_rule_appendix: "admrul_appendix",
+  admin_rule_form: "admrul_appendix",
+  admbyl: "admrul_appendix",
+  ordin_appendix: "ordin_appendix",
+  ordinance_appendix: "ordin_appendix",
+  ordinance_form: "ordin_appendix",
+  ordinbyl: "ordin_appendix",
+};
+
+const AUTO_TARGETS: LawTarget[] = [
+  "law",
+  "admrul",
+  "ordin",
+  "prec",
+  "detc",
+  "expc",
+  "decc",
+  "trty",
+  "lstrm",
+];
 
 function normalizeMatchText(value: string) {
   return value
@@ -27,76 +369,42 @@ function toComparableDate(value: string) {
   return numeric || "0";
 }
 
-const parser = new XMLParser({
-  ignoreAttributes: false,
-  attributeNamePrefix: "",
-  trimValues: true,
-});
+function truncateText(value: string, maxLength = 20000) {
+  if (value.length <= maxLength) {
+    return value;
+  }
 
-const KO = {
-  law: "\uBC95\uB839",
-  adminRule: "\uD589\uC815\uADDC\uCE59",
-  ordinance: "\uC790\uCE58\uBC95\uADDC",
-  lawSearchRoot: "LawSearch",
-  adminRuleSearchRoot: "AdmRulSearch",
-  ordinanceSearchRoot: "OrdinSearch",
-  lawId: "\uBC95\uB839ID",
-  adminRuleId: "\uD589\uC815\uADDC\uCE59ID",
-  ordinanceId: "\uC790\uCE58\uBC95\uADDCID",
-  lawSerial: "\uBC95\uB839\uC77C\uB828\uBC88\uD638",
-  adminRuleSerial: "\uD589\uC815\uADDC\uCE59\uC77C\uB828\uBC88\uD638",
-  ordinanceSerial: "\uC790\uCE58\uBC95\uADDC\uC77C\uB828\uBC88\uD638",
-  lawDetailLink: "\uBC95\uB839\uC0C1\uC138\uB9C1\uD06C",
-  adminRuleDetailLink: "\uD589\uC815\uADDC\uCE59\uC0C1\uC138\uB9C1\uD06C",
-  ordinanceDetailLink: "\uC790\uCE58\uBC95\uADDC\uC0C1\uC138\uB9C1\uD06C",
-  lawNameKo: "\uBC95\uB839\uBA85\uD55C\uAE00",
-  lawName: "\uBC95\uB839\uBA85",
-  adminRuleName: "\uD589\uC815\uADDC\uCE59\uBA85",
-  ordinanceName: "\uC790\uCE58\uBC95\uADDC\uBA85",
-  lawClassName: "\uBC95\uB839\uAD6C\uBD84\uBA85",
-  lawTypeName: "\uBC95\uC885\uAD6C\uBD84\uBA85",
-  adminRuleType: "\uD589\uC815\uADDC\uCE59\uC885\uB958",
-  ordinanceType: "\uC790\uCE58\uBC95\uADDC\uC885\uB958",
-  effectiveDate: "\uC2DC\uD589\uC77C\uC790",
-  effectiveDay: "\uC2DC\uD589\uC77C",
-  effectStartDate: "\uD6A8\uB825\uBC1C\uC0DD\uC77C\uC790",
-  promulgationDate: "\uACF5\uD3EC\uC77C\uC790",
-  issueDate: "\uBC1C\uB839\uC77C\uC790",
-  promulgationDay: "\uACF5\uD3EC\uC77C",
-  ministryName: "\uC18C\uAD00\uBD80\uCC98\uBA85",
-  ministry: "\uC18C\uAD00\uBD80\uCC98",
-  agencyName: "\uAE30\uAD00\uBA85",
-  articleNumber: "\uC870\uBB38\uBC88\uD638",
-  articleBranchNumber: "\uC870\uBB38\uAC00\uC9C0\uBC88\uD638",
-  articleKey: "\uC870\uBB38\uD0A4",
-  articleNo: "\uC870\uBC88\uD638",
-  article: "\uC870",
-  articleTitle: "\uC870\uBB38\uC81C\uBAA9",
-  articleText: "\uC870\uBB38\uB0B4\uC6A9",
-  title: "\uC81C\uBAA9",
-};
-
-const TARGET_ALIASES: Record<string, LawTarget> = {
-  law: "law",
-  laws: "law",
-  [KO.law]: "law",
-  admin_rule: "admrul",
-  admin_rules: "admrul",
-  admrul: "admrul",
-  [KO.adminRule]: "admrul",
-  ordinance: "ordin",
-  ordin: "ordin",
-  [KO.ordinance]: "ordin",
-};
-
-const ALL_TARGETS: LawTarget[] = ["law", "admrul", "ordin"];
+  return `${value.slice(0, maxLength)}\n...[truncated]`;
+}
 
 export function normalizeTarget(value?: string | null): LawTarget {
   if (!value) {
     return "law";
   }
 
-  return TARGET_ALIASES[value] ?? "law";
+  const normalized = TARGET_ALIASES[value.toLowerCase().trim()];
+  if (normalized && normalized !== "auto") {
+    return normalized;
+  }
+
+  return "law";
+}
+
+export function normalizeRequestedTarget(value?: string | null): RequestedTarget {
+  if (!value) {
+    return "auto";
+  }
+
+  return TARGET_ALIASES[value.toLowerCase().trim()] ?? "auto";
+}
+
+export function resolveSearchTargets(value?: string | null) {
+  const normalized = normalizeRequestedTarget(value);
+  return normalized === "auto" ? AUTO_TARGETS : [normalized];
+}
+
+function getConfig(target: LawTarget) {
+  return TARGET_CONFIG[target];
 }
 
 function getLawApiBases() {
@@ -227,25 +535,87 @@ async function fetchXmlWithFallback(
   throw lastError instanceof Error ? lastError : new Error("Law API request failed.");
 }
 
-function asRecordArray(value: unknown): Record<string, unknown>[] {
-  if (!value) {
+function flattenText(value: unknown): string[] {
+  if (value == null) {
     return [];
   }
+  if (typeof value === "string" || typeof value === "number") {
+    const text = String(value).trim();
+    return text ? [text] : [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(flattenText);
+  }
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).flatMap(flattenText);
+  }
 
-  const values = Array.isArray(value) ? value : [value];
-
-  return values.filter(
-    (item): item is Record<string, unknown> => !!item && typeof item === "object"
-  );
+  return [];
 }
 
-function extractDetailIdFromLink(item: Record<string, unknown>) {
-  const detailLink = readString(item, [
-    KO.lawDetailLink,
-    KO.adminRuleDetailLink,
-    KO.ordinanceDetailLink,
-    "detailLink",
-  ]);
+function visitObjects(
+  value: unknown,
+  visitor: (node: Record<string, unknown>) => void
+) {
+  if (!value || typeof value !== "object") {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      visitObjects(item, visitor);
+    }
+    return;
+  }
+
+  const node = value as Record<string, unknown>;
+  visitor(node);
+
+  for (const child of Object.values(node)) {
+    visitObjects(child, visitor);
+  }
+}
+
+function collectFieldValues(parsed: Record<string, unknown>, keys: string[]) {
+  const values = new Set<string>();
+
+  visitObjects(parsed, (node) => {
+    for (const key of keys) {
+      const value = node[key];
+      if (typeof value === "string" && value.trim()) {
+        values.add(value.trim());
+      } else if (typeof value === "number" && Number.isFinite(value)) {
+        values.add(String(value));
+      }
+    }
+  });
+
+  return [...values];
+}
+
+function collectCandidateNodes(parsed: Record<string, unknown>, target: LawTarget) {
+  const config = getConfig(target);
+  const candidateKeys = [
+    ...config.searchIdKeys,
+    ...(config.detailIdKeys ?? []),
+    ...(config.mstKeys ?? []),
+    ...(config.alternateIdKeys ?? []),
+    ...config.nameKeys,
+    ...(config.detailLinkKeys ?? []),
+  ];
+  const candidates: Record<string, unknown>[] = [];
+
+  visitObjects(parsed, (node) => {
+    if (candidateKeys.some((key) => key in node)) {
+      candidates.push(node);
+    }
+  });
+
+  return candidates;
+}
+
+function extractDetailIdFromLink(item: Record<string, unknown>, detailLinkKeys: string[]) {
+  const detailLink = readString(item, detailLinkKeys);
 
   if (!detailLink) {
     return "";
@@ -253,107 +623,73 @@ function extractDetailIdFromLink(item: Record<string, unknown>) {
 
   try {
     const url = new URL(detailLink, getLawApiBases()[0]);
-    return url.searchParams.get("ID")?.trim() ?? "";
+    return (
+      url.searchParams.get("ID")?.trim() ??
+      url.searchParams.get("LID")?.trim() ??
+      url.searchParams.get("MST")?.trim() ??
+      ""
+    );
   } catch {
     return "";
   }
 }
 
-export function normalizeSearchItems(parsed: Record<string, unknown>) {
-  const root =
-    parsed[KO.lawSearchRoot] && typeof parsed[KO.lawSearchRoot] === "object"
-      ? (parsed[KO.lawSearchRoot] as Record<string, unknown>)
-      : parsed[KO.adminRuleSearchRoot] && typeof parsed[KO.adminRuleSearchRoot] === "object"
-      ? (parsed[KO.adminRuleSearchRoot] as Record<string, unknown>)
-      : parsed[KO.ordinanceSearchRoot] && typeof parsed[KO.ordinanceSearchRoot] === "object"
-        ? (parsed[KO.ordinanceSearchRoot] as Record<string, unknown>)
-        : parsed;
+function selectPrimaryId(item: Record<string, unknown>, target: LawTarget) {
+  const config = getConfig(target);
+  const detailIdFromLink = extractDetailIdFromLink(item, config.detailLinkKeys ?? []);
+  const searchId = readString(item, config.searchIdKeys);
+  const detailId = readString(item, config.detailIdKeys ?? []);
+  const alternateId = readString(item, config.alternateIdKeys ?? []);
 
-  const candidates = [
-    ...asRecordArray(root.law),
-    ...asRecordArray(root.admrul),
-    ...asRecordArray(root.ordin),
-    ...asRecordArray(root.item),
-    ...asRecordArray(root.items),
-    ...asRecordArray(root[KO.law]),
-    ...asRecordArray(root[KO.adminRule]),
-    ...asRecordArray(root[KO.ordinance]),
-  ];
+  if (config.detailLookup === "id_or_alternate") {
+    return detailId || searchId || alternateId || detailIdFromLink;
+  }
 
+  return detailId || searchId || detailIdFromLink || alternateId;
+}
+
+export function normalizeSearchItems(target: LawTarget, parsed: Record<string, unknown>) {
+  const config = getConfig(target);
   const seen = new Set<string>();
 
-  return candidates
+  return collectCandidateNodes(parsed, target)
     .map((item): LawSearchItem => {
-      const detailIdFromLink = extractDetailIdFromLink(item);
-      const hasAdminRuleFields = Boolean(
-        item[KO.adminRuleSerial] || item[KO.adminRuleId] || item[KO.adminRuleName]
-      );
-      const hasOrdinanceFields = Boolean(
-        item[KO.ordinanceSerial] || item[KO.ordinanceId] || item[KO.ordinanceName]
-      );
-      const hasLawFields = Boolean(item[KO.lawSerial] || item[KO.lawId] || item[KO.lawName]);
-      const target = hasAdminRuleFields ? "admrul" : hasOrdinanceFields ? "ordin" : "law";
-      const id = hasAdminRuleFields
-        ? readString(item, [KO.adminRuleSerial, "ID", "id", KO.adminRuleId]) || detailIdFromLink
-        : hasOrdinanceFields
-          ? readString(item, [KO.ordinanceSerial, "ID", "id", KO.ordinanceId]) ||
-            detailIdFromLink
-          : readString(item, [KO.lawId, "ID", "id"]) || detailIdFromLink;
-      const mst = hasLawFields
-        ? readString(item, [
-            "MST",
-            "mst",
-            KO.lawSerial,
-          ])
-        : readString(item, [
-            "MST",
-            "mst",
-          ]);
-      const fallbackMst = readString(item, [
-        KO.lawSerial,
-        KO.adminRuleSerial,
-        KO.ordinanceSerial,
-      ]);
-      const name = readString(item, [
-        KO.lawNameKo,
-        KO.lawName,
-        KO.adminRuleName,
-        KO.ordinanceName,
-        "lawNm",
-        "lsNm",
-      ]);
+      const id = selectPrimaryId(item, target);
+      const mst = readString(item, config.mstKeys ?? []);
+      const alternateId = readString(item, config.alternateIdKeys ?? []);
+      const name = readString(item, config.nameKeys);
 
       return {
         target,
+        upstreamTarget: config.upstreamTarget,
         id,
-        mst: mst || fallbackMst,
+        mst,
+        alternateId,
         name,
-        type: readString(item, [
-          KO.lawClassName,
-          KO.lawTypeName,
-          KO.adminRuleType,
-          KO.ordinanceType,
-        ]),
-        effectiveDate: readString(item, [
-          KO.effectiveDate,
-          KO.effectiveDay,
-          KO.effectStartDate,
-        ]),
-        promulgationDate: readString(item, [
-          KO.promulgationDate,
-          KO.issueDate,
-          KO.promulgationDay,
-        ]),
-        department: readString(item, [KO.ministryName, KO.ministry, KO.agencyName]),
+        type: readString(item, config.typeKeys ?? []),
+        effectiveDate: readString(item, config.effectiveDateKeys ?? []),
+        promulgationDate: readString(item, config.promulgationDateKeys ?? []),
+        department: readString(item, config.departmentKeys ?? []),
+        detailUrl: readString(item, config.detailLinkKeys ?? []),
+        detailQuery: name,
+        searchOnly: Boolean(config.searchOnly),
         raw: item,
       };
     })
-    .filter((item) => item.name || item.id || item.mst)
+    .filter((item) => item.name || item.id || item.mst || item.alternateId)
     .filter((item) => {
-      const key = `${item.id}:${item.mst}:${item.name}`;
+      const key = [
+        item.target,
+        item.id,
+        item.mst,
+        item.alternateId,
+        item.name,
+      ].join(":");
+
       if (seen.has(key)) {
         return false;
       }
+
       seen.add(key);
       return true;
     });
@@ -379,6 +715,10 @@ export function selectBestSearchItem(items: LawSearchItem[], query: string) {
         score = 150;
       } else if (item.name.includes(query)) {
         score = 100;
+      }
+
+      if (item.target === "law") {
+        score += 10;
       }
 
       return { item, score };
@@ -408,22 +748,15 @@ export function selectBestSearchItem(items: LawSearchItem[], query: string) {
   return scored[0]?.item ?? null;
 }
 
-export function resolveSearchTargets(value?: string | null) {
-  if (!value || value === "auto") {
-    return ALL_TARGETS;
-  }
-
-  return [normalizeTarget(value)];
-}
-
 export async function searchLawApi(params: {
   target: LawTarget;
   query: string;
   page?: number;
   display?: number;
 }) {
+  const config = getConfig(params.target);
   const { parsed, requestUrl } = await fetchXmlWithFallback("lawSearch.do", {
-    target: params.target,
+    target: config.upstreamTarget,
     type: "XML",
     query: params.query,
     page: String(params.page ?? 1),
@@ -434,7 +767,7 @@ export async function searchLawApi(params: {
   return {
     requestUrl,
     parsed,
-    items: normalizeSearchItems(parsed),
+    items: normalizeSearchItems(params.target, parsed),
   };
 }
 
@@ -462,10 +795,7 @@ export async function searchLawApiMultiTarget(params: {
           {
             target: targets[index],
             requestUrl: result.value.requestUrl,
-            items: result.value.items.map((item) => ({
-              ...item,
-              target: item.target || targets[index],
-            })),
+            items: result.value.items,
           },
         ]
       : []
@@ -489,21 +819,89 @@ export async function searchLawApiMultiTarget(params: {
   };
 }
 
+function buildDetailParams(
+  target: LawTarget,
+  params: { id?: string; mst?: string; query?: string }
+): Record<string, string> {
+  const config = getConfig(target);
+
+  switch (config.detailLookup) {
+    case "query":
+      return {
+        target: config.upstreamTarget,
+        type: "XML",
+        query: params.query ?? "",
+      };
+    case "id_or_alternate":
+      return {
+        target: config.upstreamTarget,
+        type: "XML",
+        ID: params.id ?? "",
+        LID: params.mst ?? "",
+      };
+    case "id":
+      return {
+        target: config.upstreamTarget,
+        type: "XML",
+        ID: params.id ?? "",
+      };
+    case "id_or_mst":
+    default:
+      return {
+        target: config.upstreamTarget,
+        type: "XML",
+        ID: params.id ?? "",
+        MST: params.mst ?? "",
+      };
+  }
+}
+
+export function normalizeDetail(target: LawTarget, parsed: Record<string, unknown>) {
+  const config = getConfig(target);
+  const title = collectFieldValues(parsed, config.titleKeys ?? config.nameKeys)[0] ?? "";
+  const type = collectFieldValues(parsed, config.typeKeys ?? [])[0] ?? "";
+  const department = collectFieldValues(parsed, config.departmentKeys ?? [])[0] ?? "";
+  const primaryDate =
+    collectFieldValues(parsed, config.effectiveDateKeys ?? [])[0] ??
+    collectFieldValues(parsed, config.promulgationDateKeys ?? [])[0] ??
+    "";
+  const bodyParts = collectFieldValues(parsed, config.bodyKeys ?? []);
+  const bodyText =
+    bodyParts.length > 0
+      ? truncateText(bodyParts.join("\n\n"))
+      : truncateText(flattenText(parsed).join("\n"));
+
+  return {
+    target,
+    label: config.label,
+    title,
+    type,
+    department,
+    primaryDate,
+    bodyText,
+    searchOnly: Boolean(config.searchOnly),
+  };
+}
+
 export async function getLawDetail(params: {
   target: LawTarget;
   id?: string;
   mst?: string;
+  query?: string;
 }) {
-  const { parsed, requestUrl } = await fetchXmlWithFallback("lawService.do", {
-    target: params.target,
-    type: "XML",
-    ID: params.id ?? "",
-    MST: params.mst ?? "",
-  });
+  const config = getConfig(params.target);
+
+  if (config.searchOnly) {
+    throw new Error(`${config.label} is search-only in this wrapper.`);
+  }
+
+  const lookupParams = buildDetailParams(params.target, params);
+  const { parsed, requestUrl } = await fetchXmlWithFallback("lawService.do", lookupParams);
 
   return {
     requestUrl,
     parsed,
+    normalized: normalizeDetail(params.target, parsed),
   };
 }
 
@@ -525,54 +923,35 @@ function normalizeArticleNumber(value: string) {
     .trim();
 }
 
-function flattenText(value: unknown): string[] {
-  if (value == null) {
-    return [];
-  }
-  if (typeof value === "string" || typeof value === "number") {
-    const text = String(value).trim();
-    return text ? [text] : [];
-  }
-  if (Array.isArray(value)) {
-    return value.flatMap(flattenText);
-  }
-  if (typeof value === "object") {
-    return Object.values(value as Record<string, unknown>).flatMap(flattenText);
-  }
+function findArticleNode(parsed: Record<string, unknown>, wanted: string) {
+  let found: Record<string, unknown> | null = null;
 
-  return [];
-}
-
-function visitObjects(
-  value: unknown,
-  visitor: (node: Record<string, unknown>) => boolean
-): Record<string, unknown> | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const result = visitObjects(item, visitor);
-      if (result) {
-        return result;
-      }
+  visitObjects(parsed, (candidate) => {
+    if (found) {
+      return;
     }
-    return null;
-  }
 
-  const node = value as Record<string, unknown>;
-  if (visitor(node)) {
-    return node;
-  }
+    const number = readString(candidate, [
+      KO.articleNumber,
+      KO.articleBranchNumber,
+      KO.articleKey,
+      KO.articleNo,
+      KO.article,
+    ]);
 
-  for (const child of Object.values(node)) {
-    const result = visitObjects(child, visitor);
-    if (result) {
-      return result;
+    if (normalizeArticleNumber(number) === wanted) {
+      found = candidate;
+      return;
     }
-  }
 
-  return null;
+    const title = readString(candidate, [KO.articleTitle, KO.articleText, KO.title]);
+    const marker = `\uC81C${wanted}\uC870`;
+    if (title.startsWith(marker) || title.includes(marker)) {
+      found = candidate;
+    }
+  });
+
+  return found;
 }
 
 function extractArticleFromTextLines(parsed: Record<string, unknown>, wanted: string) {
@@ -586,9 +965,7 @@ function extractArticleFromTextLines(parsed: Record<string, unknown>, wanted: st
     return null;
   }
 
-  const titleMatch = articleLine.match(
-    new RegExp(`^${marker}(?:\\(([^)]+)\\))?`)
-  );
+  const titleMatch = articleLine.match(new RegExp(`^${marker}(?:\\(([^)]+)\\))?`));
 
   return {
     article: `\uC81C${wanted}\uC870`,
@@ -608,23 +985,7 @@ export function extractArticle(parsed: Record<string, unknown>, article?: string
     return null;
   }
 
-  const node = visitObjects(parsed, (candidate) => {
-    const number = readString(candidate, [
-      KO.articleNumber,
-      KO.articleBranchNumber,
-      KO.articleKey,
-      KO.articleNo,
-      KO.article,
-    ]);
-
-    if (normalizeArticleNumber(number) === wanted) {
-      return true;
-    }
-
-    const title = readString(candidate, [KO.articleTitle, KO.articleText, KO.title]);
-    const marker = `\uC81C${wanted}\uC870`;
-    return title.startsWith(marker) || title.includes(marker);
-  });
+  const node = findArticleNode(parsed, wanted);
 
   if (!node) {
     return extractArticleFromTextLines(parsed, wanted);

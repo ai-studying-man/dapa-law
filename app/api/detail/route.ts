@@ -3,6 +3,7 @@ import { jsonResponse, optionsResponse } from "@/lib/http";
 import {
   extractArticle,
   getLawDetail,
+  normalizeRequestedTarget,
   normalizeTarget,
   selectBestSearchItem,
   searchLawApiMultiTarget,
@@ -26,7 +27,8 @@ export async function GET(req: Request) {
   const id = searchParams.get("id")?.trim() || "";
   const mst = searchParams.get("mst")?.trim() || "";
   const article = searchParams.get("article")?.trim() || "";
-  const requestedTarget = searchParams.get("target");
+  const requestedTarget =
+    searchParams.get("category")?.trim() || searchParams.get("target")?.trim() || "auto";
   const catalogMatch = query ? findBestCatalogMatch(query) : null;
   const fallbackTarget =
     requestedTarget && requestedTarget !== "auto"
@@ -48,6 +50,7 @@ export async function GET(req: Request) {
     let detailMst = mst;
     let selectedSearchItem = null;
     let target = fallbackTarget;
+    let detailQuery = query;
 
     if (query) {
       const search = await searchLawApiMultiTarget({
@@ -57,17 +60,33 @@ export async function GET(req: Request) {
       });
       selectedSearchItem = selectBestSearchItem(search.items, query);
       detailId = selectedSearchItem?.id ?? detailId;
-      detailMst = selectedSearchItem?.mst ?? detailMst;
+      detailMst =
+        selectedSearchItem?.mst || selectedSearchItem?.alternateId || detailMst;
+      detailQuery = selectedSearchItem?.detailQuery || detailQuery;
       target = selectedSearchItem?.target ?? fallbackTarget;
     }
 
-    if (!detailId && !detailMst) {
+    if (target === "law_appendix" || target === "admrul_appendix" || target === "ordin_appendix") {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "Appendix and form categories are search-only. Use /api/search for these categories.",
+          query,
+          category: target,
+          catalogMatch,
+          selectedSearchItem,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (target !== "lstrm" && !detailId && !detailMst) {
       return jsonResponse(
         {
           ok: false,
           error: "Could not find an ID or MST for detail lookup from search results.",
           query,
-          target,
+          category: target,
           catalogMatch,
         },
         { status: 404 }
@@ -78,19 +97,22 @@ export async function GET(req: Request) {
       target,
       id: detailId,
       mst: detailMst,
+      query: detailQuery,
     });
     const extractedArticle = extractArticle(detail.parsed, article);
 
     return jsonResponse({
       ok: true,
       query,
-      target,
+      category: target,
       id: detailId,
       mst: detailMst,
+      detailQuery,
       catalogMatch,
       selectedSearchItem,
       requestUrl: detail.requestUrl,
       article: extractedArticle,
+      normalized: detail.normalized,
       data: detail.parsed,
     });
   } catch (error) {
@@ -98,7 +120,7 @@ export async function GET(req: Request) {
       {
         ok: false,
         query,
-        target: requestedTarget ?? "auto",
+        category: normalizeRequestedTarget(requestedTarget),
         catalogMatch,
         error: "Failed to call the National Law Information detail API.",
         message: error instanceof Error ? error.message : "unknown error",

@@ -1,6 +1,10 @@
 import { searchCatalog } from "@/lib/dapa-catalog";
 import { jsonResponse, optionsResponse } from "@/lib/http";
-import { searchLawApiMultiTarget, selectBestSearchItem } from "@/lib/law-api";
+import {
+  normalizeRequestedTarget,
+  searchLawApiMultiTarget,
+  selectBestSearchItem,
+} from "@/lib/law-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +20,8 @@ export async function GET(req: Request) {
   const source = searchParams.get("source") ?? "all";
   const type = searchParams.get("type") ?? "";
   const catalogOnly = searchParams.get("catalog_only") === "true";
-  const requestedTarget = searchParams.get("target");
+  const requestedTarget =
+    searchParams.get("category")?.trim() || searchParams.get("target")?.trim() || "auto";
   const page = Number(searchParams.get("page") ?? "1");
   const display = Math.min(Number(searchParams.get("display") ?? "10"), 50);
   const limit = Math.min(Number(searchParams.get("limit") ?? "20"), 100);
@@ -63,7 +68,7 @@ export async function GET(req: Request) {
     return jsonResponse({
       ok: true,
       query,
-      target: bestItem?.target ?? requestedTarget ?? "auto",
+      category: bestItem?.target ?? normalizeRequestedTarget(requestedTarget),
       catalog,
       upstream: {
         requestUrls: upstream.requestUrls,
@@ -75,7 +80,7 @@ export async function GET(req: Request) {
       {
         ok: false,
         query,
-        target: requestedTarget ?? "auto",
+        category: normalizeRequestedTarget(requestedTarget),
         catalog,
         error: "Failed to call the National Law Information search API.",
         message: error instanceof Error ? error.message : "unknown error",

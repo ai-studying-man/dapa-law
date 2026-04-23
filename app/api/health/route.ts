@@ -4,7 +4,7 @@ import { jsonResponse } from "@/lib/http";
 export async function GET() {
   return jsonResponse({
     ok: true,
-    service: "dapa-law-gpt-proxy",
+    service: "dapa-law-vercel-wrapper",
     lawApiConfigured: Boolean(process.env.LAW_API_KEY || process.env.LAW_API_OC),
     deployment: {
       gitCommitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
