@@ -605,6 +605,38 @@ function collectFieldValues(parsed: Record<string, unknown>, keys: string[]) {
   return [...values];
 }
 
+function collectOrderedFieldValues(parsed: Record<string, unknown>, keys: string[]) {
+  const values: string[] = [];
+  const seen = new Set<string>();
+
+  visitObjects(parsed, (node) => {
+    for (const key of keys) {
+      const value = node[key];
+      const candidates = flattenText(value);
+
+      for (const candidate of candidates) {
+        if (!seen.has(candidate)) {
+          seen.add(candidate);
+          values.push(candidate);
+        }
+      }
+    }
+  });
+
+  return values;
+}
+
+function collectPreferredBodyParts(target: LawTarget, parsed: Record<string, unknown>) {
+  if (target === "admrul") {
+    const clauseParts = collectOrderedFieldValues(parsed, ["조문내용"]);
+    if (clauseParts.length > 0) {
+      return clauseParts;
+    }
+  }
+
+  return collectFieldValues(parsed, getConfig(target).bodyKeys ?? []);
+}
+
 function collectCandidateNodes(parsed: Record<string, unknown>, target: LawTarget) {
   const config = getConfig(target);
   const candidateKeys = [
@@ -877,7 +909,7 @@ export function normalizeDetail(target: LawTarget, parsed: Record<string, unknow
     collectFieldValues(parsed, config.effectiveDateKeys ?? [])[0] ??
     collectFieldValues(parsed, config.promulgationDateKeys ?? [])[0] ??
     "";
-  const bodyParts = collectFieldValues(parsed, config.bodyKeys ?? []);
+  const bodyParts = collectPreferredBodyParts(target, parsed);
   const bodyText =
     bodyParts.length > 0
       ? truncateText(bodyParts.join("\n\n"))
