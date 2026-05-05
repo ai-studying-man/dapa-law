@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Supabase: link project",
+      "type": "shell",
+      "command": "npx supabase link --project-ref ${input:supabaseProjectRef}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Supabase: push migrations",
+      "type": "shell",
+      "command": "npm run supabase:push",
+      "problemMatcher": []
+    },
+    {
+      "label": "Supabase: sync DAPA catalog",
+      "type": "shell",
+      "command": "npm run catalog:sync:supabase",
+      "problemMatcher": []
+    },
+    {
+      "label": "Vercel: deploy production",
+      "type": "shell",
+      "command": "vercel deploy --prod --yes",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "supabaseProjectRef",
+      "type": "promptString",
+      "description": "Supabase project ref"
+    }
+  ]
+}

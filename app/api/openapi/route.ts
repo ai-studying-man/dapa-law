@@ -26,9 +26,9 @@ export async function GET(req: Request) {
     openapi: "3.1.0",
     info: {
       title: "DAPA Law Vercel Wrapper API",
-      version: "2.2.0",
+      version: "2.3.0",
       description:
-        "Vercel wrapper for selected National Law Information APIs used by the DAPA chatbot. This schema excludes unrelated guide-list categories and keeps appendix or form lookups search-only.",
+        "Vercel wrapper for selected National Law Information APIs used by the DAPA chatbot. DAPA catalog lists can be read from Supabase, while statute and rule body text is retrieved live from the National Law Information API.",
     },
     servers: [
       {
@@ -72,10 +72,73 @@ export async function GET(req: Request) {
               schema: { type: "integer", default: 10, minimum: 1, maximum: 50 },
               description: "Maximum items per upstream category request.",
             },
+            {
+              name: "source",
+              in: "query",
+              schema: {
+                type: "string",
+                enum: ["all", "defense_laws", "admin_rules"],
+                default: "all",
+              },
+              description:
+                "Optional DAPA catalog filter. Use defense_laws for DAPA defense law list and admin_rules for DAPA administrative rule list.",
+            },
+            {
+              name: "catalog_only",
+              in: "query",
+              schema: { type: "boolean", default: false },
+              description:
+                "When true, returns only the DAPA catalog match list from Supabase or local fallback and does not call the National Law Information API.",
+            },
           ],
           responses: {
             "200": {
               description: "Search results",
+            },
+          },
+        },
+      },
+      "/api/catalog": {
+        get: {
+          operationId: "getDapaLawCatalog",
+          summary: "Get DAPA defense law and administrative rule catalog",
+          description:
+            "Returns the DAPA-maintained catalog list from Supabase when configured, with local JSON fallback. This endpoint returns only titles, categories, source links, and lookup metadata. It does not return statute or rule body text.",
+          parameters: [
+            {
+              name: "query",
+              in: "query",
+              schema: { type: "string" },
+              description:
+                "Optional keyword or exact title. Leave empty to list catalog entries.",
+            },
+            {
+              name: "source",
+              in: "query",
+              schema: {
+                type: "string",
+                enum: ["all", "defense_laws", "admin_rules"],
+                default: "all",
+              },
+              description:
+                "Catalog source. defense_laws is the DAPA defense law page; admin_rules is the DAPA administrative rule page.",
+            },
+            {
+              name: "type",
+              in: "query",
+              schema: { type: "string" },
+              description:
+                "Optional type or category filter such as 법령, 시행령, 시행규칙, 훈령, 예규, 고시.",
+            },
+            {
+              name: "limit",
+              in: "query",
+              schema: { type: "integer", default: 50, minimum: 1, maximum: 100 },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "DAPA catalog entries",
             },
           },
         },

@@ -3,11 +3,16 @@ import { jsonResponse, optionsResponse } from "@/lib/http";
 import {
   extractArticle,
   getLawDetail,
+  type LawSearchItem,
   normalizeRequestedTarget,
   normalizeTarget,
   selectBestSearchItem,
   searchLawApiMultiTarget,
 } from "@/lib/law-api";
+import {
+  isSupabaseCatalogConfigured,
+  searchSupabaseCatalog,
+} from "@/lib/supabase-catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +30,32 @@ export async function OPTIONS() {
   return optionsResponse();
 }
 
+function redactOc(value: string) {
+  return value.replace(/([?&]OC=)[^&]+/gi, "$1REDACTED");
+}
+
+function toPublicSearchItem(item: LawSearchItem | null) {
+  if (!item) {
+    return null;
+  }
+
+  return {
+    target: item.target,
+    upstreamTarget: item.upstreamTarget,
+    id: item.id,
+    mst: item.mst,
+    alternateId: item.alternateId,
+    name: item.name,
+    type: item.type,
+    effectiveDate: item.effectiveDate,
+    promulgationDate: item.promulgationDate,
+    department: item.department,
+    detailUrl: item.detailUrl ? redactOc(item.detailUrl) : "",
+    detailQuery: item.detailQuery,
+    searchOnly: item.searchOnly,
+  };
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const query =
@@ -38,7 +69,8 @@ export async function GET(req: Request) {
   const includeRaw = searchParams.get("include_raw") === "true";
   const requestedTarget =
     searchParams.get("category")?.trim() || searchParams.get("target")?.trim() || "auto";
-  const catalogMatch = query ? findBestCatalogMatch(query) : null;
+  let catalogMatch = query ? findBestCatalogMatch(query) : null;
+  let catalogStorage: "supabase" | "local_json" = "local_json";
   const fallbackTarget =
     requestedTarget && requestedTarget !== "auto"
       ? normalizeTarget(requestedTarget)
@@ -55,11 +87,54 @@ export async function GET(req: Request) {
   }
 
   try {
+    if (query && isSupabaseCatalogConfigured()) {
+      try {
+        const supabaseCatalog = await searchSupabaseCatalog({
+          query,
+          limit: 1,
+        });
+        catalogMatch = supabaseCatalog.items[0] ?? catalogMatch;
+        catalogStorage = "supabase";
+      } catch {
+        catalogStorage = "local_json";
+      }
+    }
+
     let detailId = id;
     let detailMst = mst;
     let selectedSearchItem = null;
     let target = fallbackTarget;
     let detailQuery = query;
+
+    if (query && requestedTarget && requestedTarget !== "auto" && fallbackTarget === "admrul" && !id && !mst) {
+      try {
+        const directDetail = await getLawDetail({
+          target: fallbackTarget,
+          query,
+        });
+        const directArticle = extractArticle(directDetail.parsed, article);
+        return jsonResponse({
+          ok: true,
+          query,
+          category: fallbackTarget,
+          id: "",
+          mst: "",
+          detailQuery: query,
+          catalogMatch,
+          catalogStorage,
+          selectedSearchItem: null,
+          requestUrl: directDetail.requestUrl,
+          article: directArticle,
+          normalized: {
+            ...directDetail.normalized,
+            bodyText: directArticle ? "" : truncateText(directDetail.normalized.bodyText, 4000),
+          },
+          data: includeRaw ? directDetail.parsed : undefined,
+        });
+      } catch {
+        // Fall through to search-based resolution.
+      }
+    }
 
     if (query) {
       const search = await searchLawApiMultiTarget({
@@ -83,7 +158,8 @@ export async function GET(req: Request) {
           query,
           category: target,
           catalogMatch,
-          selectedSearchItem,
+          catalogStorage,
+          selectedSearchItem: toPublicSearchItem(selectedSearchItem),
         },
         { status: 400 }
       );
@@ -97,6 +173,7 @@ export async function GET(req: Request) {
           query,
           category: target,
           catalogMatch,
+          catalogStorage,
         },
         { status: 404 }
       );
@@ -124,24 +201,23 @@ export async function GET(req: Request) {
       mst: detailMst,
       detailQuery,
       catalogMatch,
-      selectedSearchItem,
+      catalogStorage,
+      selectedSearchItem: toPublicSearchItem(selectedSearchItem),
       requestUrl: detail.requestUrl,
       article: extractedArticle,
       normalized,
       data: includeRaw ? detail.parsed : undefined,
     });
   } catch (error) {
-    return jsonResponse(
-      {
-        ok: false,
-        query,
-        category: normalizeRequestedTarget(requestedTarget),
-        catalogMatch,
-        error: "Failed to call the National Law Information detail API.",
-        message: error instanceof Error ? error.message : "unknown error",
-        hint: "Set the National Law Information OPEN API OC value in LAW_API_KEY or LAW_API_OC on Vercel.",
-      },
-      { status: 502 }
-    );
+    return jsonResponse({
+      ok: false,
+      query,
+      category: normalizeRequestedTarget(requestedTarget),
+      catalogMatch,
+      catalogStorage,
+      error: "Failed to call the National Law Information detail API.",
+      message: error instanceof Error ? error.message : "unknown error",
+      hint: "The DAPA catalog lookup was returned when available, but the live National Law Information API detail lookup failed. Retry with query, id, or mst.",
+    });
   }
 }

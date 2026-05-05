@@ -882,6 +882,7 @@ function buildDetailParams(
         type: "XML",
         ID: params.id ?? "",
         LID: params.mst ?? "",
+        LM: params.query ?? "",
       };
     case "id":
       return {

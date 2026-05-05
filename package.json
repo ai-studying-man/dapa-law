@@ -7,9 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "catalog:admin-rules": "node scripts/collect-dapa-admin-rules.mjs"
+    "catalog:admin-rules": "node scripts/collect-dapa-admin-rules.mjs",
+    "catalog:sync:supabase": "node scripts/sync-dapa-catalog.mjs",
+    "supabase:link": "npx supabase link",
+    "supabase:push": "npx supabase db push"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.105.3",
     "fast-xml-parser": "^5.6.0",
     "next": "16.2.3",
     "react": "19.2.4",

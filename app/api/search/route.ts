@@ -1,10 +1,16 @@
 import { searchCatalog } from "@/lib/dapa-catalog";
+import type { CatalogItem } from "@/lib/dapa-catalog";
 import { jsonResponse, optionsResponse } from "@/lib/http";
 import {
+  type LawSearchItem,
   normalizeRequestedTarget,
   searchLawApiMultiTarget,
   selectBestSearchItem,
 } from "@/lib/law-api";
+import {
+  isSupabaseCatalogConfigured,
+  searchSupabaseCatalog,
+} from "@/lib/supabase-catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +18,48 @@ export const preferredRegion = "icn1";
 
 export async function OPTIONS() {
   return optionsResponse();
+}
+
+function redactOc(value: string) {
+  return value.replace(/([?&]OC=)[^&]+/gi, "$1REDACTED");
+}
+
+function toPublicSearchItem(item: LawSearchItem) {
+  return {
+    target: item.target,
+    upstreamTarget: item.upstreamTarget,
+    id: item.id,
+    mst: item.mst,
+    alternateId: item.alternateId,
+    name: item.name,
+    type: item.type,
+    effectiveDate: item.effectiveDate,
+    promulgationDate: item.promulgationDate,
+    department: item.department,
+    detailUrl: item.detailUrl ? redactOc(item.detailUrl) : "",
+    detailQuery: item.detailQuery,
+    searchOnly: item.searchOnly,
+  };
+}
+
+function toCatalogSearchItem(item: CatalogItem & { matchScore?: number }) {
+  return {
+    target: item.target,
+    upstreamTarget: item.target === "admrul" ? "admrul" : item.target,
+    id: "",
+    mst: "",
+    alternateId: "",
+    name: item.name,
+    type: item.type,
+    effectiveDate: item.latestModifiedDate?.replace(/-/g, "") ?? "",
+    promulgationDate: item.latestModifiedDate?.replace(/-/g, "") ?? "",
+    department: item.source === "admin_rules" ? "방위사업청" : "",
+    detailUrl: item.sourceUrl ?? "",
+    detailQuery: item.query,
+    searchOnly: false,
+    source: item.source,
+    matchScore: item.matchScore ?? 0,
+  };
 }
 
 export async function GET(req: Request) {
@@ -36,20 +84,58 @@ export async function GET(req: Request) {
     );
   }
 
-  const catalog = searchCatalog({
+  const catalogSource =
+    source === "defense_laws" || source === "admin_rules" ? source : "all";
+  let catalogStorage: "supabase" | "local_json" = "local_json";
+  let catalog = searchCatalog({
     query,
-    source:
-      source === "defense_laws" || source === "admin_rules" ? source : "all",
+    source: catalogSource,
     type,
     limit,
   });
+
+  if (isSupabaseCatalogConfigured()) {
+    try {
+      catalog = await searchSupabaseCatalog({
+        query,
+        source: catalogSource,
+        type,
+        limit,
+      });
+      catalogStorage = "supabase";
+    } catch {
+      catalogStorage = "local_json";
+    }
+  }
 
   if (catalogOnly) {
     return jsonResponse({
       ok: true,
       query,
-      catalog,
+      catalog: {
+        ...catalog,
+        storage: catalogStorage,
+      },
       upstream: null,
+    });
+  }
+
+  if (normalizeRequestedTarget(requestedTarget) === "admrul" && catalog.items.length > 0) {
+    return jsonResponse({
+      ok: true,
+      query,
+      category: "admrul",
+      catalog: {
+        ...catalog,
+        storage: catalogStorage,
+      },
+      upstream: {
+        requestUrls: [],
+        items: catalog.items.map(toCatalogSearchItem),
+        source: "dapa_supabase_catalog",
+      },
+      nextStep:
+        "Use /api/detail with category=admrul and query from the selected item to retrieve live document text from the National Law Information API.",
     });
   }
 
@@ -69,24 +155,47 @@ export async function GET(req: Request) {
       ok: true,
       query,
       category: bestItem?.target ?? normalizeRequestedTarget(requestedTarget),
-      catalog,
+      catalog: {
+        ...catalog,
+        storage: catalogStorage,
+      },
       upstream: {
         requestUrls: upstream.requestUrls,
-        items,
+        items: items.map(toPublicSearchItem),
       },
     });
   } catch (error) {
-    return jsonResponse(
-      {
-        ok: false,
+    if (catalog.items.length > 0) {
+      return jsonResponse({
+        ok: true,
         query,
-        category: normalizeRequestedTarget(requestedTarget),
-        catalog,
-        error: "Failed to call the National Law Information search API.",
-        message: error instanceof Error ? error.message : "unknown error",
-        hint: "Set the National Law Information OPEN API OC value in LAW_API_KEY or LAW_API_OC on Vercel.",
+        category: catalog.items[0]?.target ?? normalizeRequestedTarget(requestedTarget),
+        catalog: {
+          ...catalog,
+          storage: catalogStorage,
+        },
+        upstream: {
+          requestUrls: [],
+          items: catalog.items.map(toCatalogSearchItem),
+          source: "dapa_supabase_catalog",
+        },
+        nextStep:
+          "Use /api/detail with query and category from the selected item to retrieve live document text from the National Law Information API.",
+      });
+    }
+
+    return jsonResponse({
+      ok: false,
+      query,
+      category: normalizeRequestedTarget(requestedTarget),
+      catalog: {
+        ...catalog,
+        storage: catalogStorage,
       },
-      { status: 502 }
-    );
+      upstream: null,
+      error: "Failed to call the National Law Information search API.",
+      message: error instanceof Error ? error.message : "unknown error",
+      hint: "The DAPA catalog was returned, but the live National Law Information API lookup failed. Retry the live search or call /api/catalog for catalog-only lookup.",
+    });
   }
 }

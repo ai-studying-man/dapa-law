@@ -1,11 +1,13 @@
 import { getCatalogSummary } from "@/lib/dapa-catalog";
 import { jsonResponse } from "@/lib/http";
+import { isSupabaseCatalogConfigured } from "@/lib/supabase-catalog";
 
 export async function GET() {
   return jsonResponse({
     ok: true,
     service: "dapa-law-vercel-wrapper",
     lawApiConfigured: Boolean(process.env.LAW_API_KEY || process.env.LAW_API_OC),
+    supabaseCatalogConfigured: isSupabaseCatalogConfigured(),
     deployment: {
       gitCommitSha: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
       gitCommitRef: process.env.VERCEL_GIT_COMMIT_REF ?? null,

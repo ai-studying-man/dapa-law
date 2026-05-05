@@ -38,7 +38,7 @@ Excluded on purpose:
 - `GET /api/health`
   - Health check
 - `GET /api/catalog`
-  - Local DAPA catalog helper kept from the earlier project version
+  - DAPA defense law and administrative rule catalog from Supabase, with local JSON fallback
 
 ## Environment
 
@@ -59,6 +59,31 @@ Optional override:
 ```bash
 LAW_API_BASE=https://www.law.go.kr/DRF
 ```
+
+Optional Supabase catalog:
+
+```bash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+Use `SUPABASE_SERVICE_ROLE_KEY` only on the server side in Vercel environment
+variables. The catalog stores only DAPA law and administrative-rule titles,
+categories, source URLs, and lookup metadata. Statute and rule body text should
+continue to come from the National Law Information API at request time.
+
+## Supabase Catalog Setup
+
+1. Run `supabase/catalog-schema.sql` in the Supabase SQL editor.
+2. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Vercel.
+3. Sync the DAPA catalog:
+
+```bash
+npm run catalog:sync:supabase
+```
+
+For production, schedule the sync daily or every 6 hours with Vercel Cron,
+GitHub Actions, or another trusted server job.
 
 ## Deploy On Vercel
 
