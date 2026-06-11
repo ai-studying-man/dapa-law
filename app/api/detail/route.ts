@@ -104,13 +104,13 @@ export async function GET(req: Request) {
     let detailMst = mst;
     let selectedSearchItem = null;
     let target = fallbackTarget;
-    let detailQuery = query;
+    let detailQuery = catalogMatch?.query || query;
 
     if (query && requestedTarget && requestedTarget !== "auto" && fallbackTarget === "admrul" && !id && !mst) {
       try {
         const directDetail = await getLawDetail({
           target: fallbackTarget,
-          query,
+          query: detailQuery,
         });
         const directArticle = extractArticle(directDetail.parsed, article);
         return jsonResponse({
@@ -119,7 +119,7 @@ export async function GET(req: Request) {
           category: fallbackTarget,
           id: "",
           mst: "",
-          detailQuery: query,
+          detailQuery,
           catalogMatch,
           catalogStorage,
           selectedSearchItem: null,
@@ -139,10 +139,10 @@ export async function GET(req: Request) {
     if (query) {
       const search = await searchLawApiMultiTarget({
         target: requestedTarget,
-        query,
+        query: detailQuery,
         display: 5,
       });
-      selectedSearchItem = selectBestSearchItem(search.items, query);
+      selectedSearchItem = selectBestSearchItem(search.items, detailQuery);
       detailId = selectedSearchItem?.id ?? detailId;
       detailMst =
         selectedSearchItem?.mst || selectedSearchItem?.alternateId || detailMst;
