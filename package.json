@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "catalog:defense-laws": "node scripts/collect-dapa-defense-laws.mjs",
     "catalog:admin-rules": "node scripts/collect-dapa-admin-rules.mjs",
+    "catalog:homepage-md": "node scripts/generate-dapa-homepage-catalog-md.mjs",
     "catalog:sync:supabase": "node scripts/sync-dapa-catalog.mjs",
+    "coverage:law-api": "node scripts/check-law-api-coverage.mjs",
     "supabase:link": "npx supabase link",
     "supabase:push": "npx supabase db push"
   },

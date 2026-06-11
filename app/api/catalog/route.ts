@@ -17,6 +17,7 @@ export async function GET(req: Request) {
   const query = searchParams.get("query")?.trim() ?? "";
   const source = searchParams.get("source") ?? "all";
   const type = searchParams.get("type") ?? "";
+  const section = searchParams.get("section")?.trim() ?? "";
   const limit = Math.min(Number(searchParams.get("limit") ?? "50"), 100);
   const catalogSource =
     source === "defense_laws" || source === "admin_rules" ? source : "all";
@@ -26,6 +27,7 @@ export async function GET(req: Request) {
     query,
     source: catalogSource,
     type,
+    section,
     limit: catalogLimit,
   });
 
@@ -35,6 +37,7 @@ export async function GET(req: Request) {
         query,
         source: catalogSource,
         type,
+        section,
         limit: catalogLimit,
       });
       storage = "supabase";
@@ -48,6 +51,7 @@ export async function GET(req: Request) {
     query,
     source,
     type,
+    section,
     storage,
     summary: getCatalogSummary(),
     totalMatches: catalog.totalMatches,

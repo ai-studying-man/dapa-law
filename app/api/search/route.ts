@@ -67,6 +67,7 @@ export async function GET(req: Request) {
   const query = searchParams.get("query")?.trim() ?? "";
   const source = searchParams.get("source") ?? "all";
   const type = searchParams.get("type") ?? "";
+  const section = searchParams.get("section")?.trim() ?? "";
   const catalogOnly = searchParams.get("catalog_only") === "true";
   const requestedTarget =
     searchParams.get("category")?.trim() || searchParams.get("target")?.trim() || "auto";
@@ -91,6 +92,7 @@ export async function GET(req: Request) {
     query,
     source: catalogSource,
     type,
+    section,
     limit,
   });
 
@@ -100,6 +102,7 @@ export async function GET(req: Request) {
         query,
         source: catalogSource,
         type,
+        section,
         limit,
       });
       catalogStorage = "supabase";

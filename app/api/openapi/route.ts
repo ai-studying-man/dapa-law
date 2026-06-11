@@ -1,4 +1,5 @@
 import { jsonResponse } from "@/lib/http";
+import { ragSearchPath } from "@/lib/openapi-rag-path";
 
 const CATEGORY_ENUM = [
   "auto",
@@ -84,6 +85,22 @@ export async function GET(req: Request) {
                 "Optional DAPA catalog filter. Use defense_laws for DAPA defense law list and admin_rules for DAPA administrative rule list.",
             },
             {
+              name: "section",
+              in: "query",
+              schema: {
+                type: "string",
+                enum: [
+                  "방위사업 관련",
+                  "계약관련",
+                  "예산관련",
+                  "군수, 물품 관련",
+                  "DAPA Administrative Rules",
+                ],
+              },
+              description:
+                "Optional DAPA homepage section filter. For defense_laws, use 방위사업 관련, 계약관련, 예산관련, or 군수, 물품 관련.",
+            },
+            {
               name: "catalog_only",
               in: "query",
               schema: { type: "boolean", default: false },
@@ -122,6 +139,22 @@ export async function GET(req: Request) {
               },
               description:
                 "Catalog source. defense_laws is the DAPA defense law page; admin_rules is the DAPA administrative rule page.",
+            },
+            {
+              name: "section",
+              in: "query",
+              schema: {
+                type: "string",
+                enum: [
+                  "방위사업 관련",
+                  "계약관련",
+                  "예산관련",
+                  "군수, 물품 관련",
+                  "DAPA Administrative Rules",
+                ],
+              },
+              description:
+                "Optional DAPA homepage section filter. For defense_laws, use 방위사업 관련, 계약관련, 예산관련, or 군수, 물품 관련.",
             },
             {
               name: "type",
@@ -201,6 +234,7 @@ export async function GET(req: Request) {
           },
         },
       },
+      "/api/rag/search": ragSearchPath,
       "/api/health": {
         get: {
           operationId: "getDapaLawWrapperHealth",

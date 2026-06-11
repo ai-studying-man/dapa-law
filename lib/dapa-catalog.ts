@@ -1,5 +1,6 @@
 import adminRulesCatalog from "@/data/dapa-admin-rules.json";
 import defenseLawsCatalog from "@/data/dapa-defense-laws.json";
+import { resolveAdminRuleApiQuery } from "@/lib/dapa-admin-rule-aliases";
 
 export type CatalogSource = "defense_laws" | "admin_rules";
 
@@ -72,7 +73,7 @@ export function getCatalogItems() {
     type: item.category,
     category: item.category,
     name: item.title,
-    query: item.title,
+    query: resolveAdminRuleApiQuery(item.title),
     target: "admrul",
     latestModifiedDate: item.latestModifiedDate,
     issueNumber: item.issueNumber,
@@ -134,16 +135,19 @@ export function searchCatalog(params: {
   query?: string;
   source?: "all" | CatalogSource;
   type?: string;
+  section?: string;
   limit?: number;
 }) {
   const query = params.query?.trim() ?? "";
   const limit = Math.min(Math.max(params.limit ?? 20, 1), 100);
   const source = params.source ?? "all";
   const type = params.type?.trim();
+  const section = params.section?.trim();
 
   const scored = getCatalogItems()
     .filter((item) => source === "all" || item.source === source)
     .filter((item) => !type || item.type === type || item.category === type)
+    .filter((item) => !section || item.section === section)
     .map((item) => ({
       item,
       score: scoreCatalogItem(item, query),

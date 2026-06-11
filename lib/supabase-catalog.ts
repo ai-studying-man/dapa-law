@@ -1,4 +1,5 @@
 import type { CatalogItem, CatalogSource } from "@/lib/dapa-catalog";
+import { resolveAdminRuleApiQuery } from "@/lib/dapa-admin-rule-aliases";
 
 type SupabaseCatalogRow = {
   id?: string;
@@ -95,7 +96,10 @@ function toCatalogItem(row: SupabaseCatalogRow, source: CatalogSource): CatalogI
       (source === "defense_laws" ? "DAPA Defense Laws" : "DAPA Administrative Rules"),
     type: row.law_type ?? row.category ?? "",
     name: row.title ?? row.query ?? "",
-    query: row.query ?? row.title ?? "",
+    query:
+      source === "admin_rules"
+        ? resolveAdminRuleApiQuery(row.query ?? row.title ?? "")
+        : row.query ?? row.title ?? "",
     target: row.target ?? (source === "admin_rules" ? "admrul" : "law"),
     sourceUrl: row.law_go_kr_url ?? row.source_url ?? undefined,
     latestModifiedDate: row.latest_modified_date ?? undefined,
@@ -166,6 +170,7 @@ export async function searchSupabaseCatalog(params: {
   query?: string;
   source?: "all" | CatalogSource;
   type?: string;
+  section?: string;
   limit?: number;
 }) {
   const query = params.query?.trim() ?? "";
@@ -181,6 +186,7 @@ export async function searchSupabaseCatalog(params: {
 
   const scored = items
     .filter((item) => !params.type || item.type === params.type || item.category === params.type)
+    .filter((item) => !params.section || item.section === params.section)
     .map((item) => ({
       item,
       score: scoreCatalogItem(item, query),

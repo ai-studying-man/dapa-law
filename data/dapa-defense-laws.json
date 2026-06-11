@@ -1,10 +1,22 @@
 {
   "source": {
-    "name": "방위사업청 방위사업법령 - 방위사업 관련",
+    "name": "방위사업청 방위사업법령",
     "url": "https://www.dapa.go.kr/dapa/page/selectPage.do?menuSeq=3087&pageSeq=3246",
-    "selector": "#cts0210",
-    "sectionTitle": "방위사업 관련",
-    "collectedAt": "2026-04-23"
+    "collectedAt": "2026-06-10T16:35:51.170Z"
+  },
+  "summary": {
+    "totalRows": 45,
+    "sections": [
+      "방위사업 관련",
+      "계약관련",
+      "예산관련",
+      "군수, 물품 관련"
+    ],
+    "types": [
+      "법령",
+      "시행령",
+      "시행규칙"
+    ]
   },
   "items": [
     {
@@ -83,7 +95,7 @@
       "section": "방위사업 관련",
       "type": "시행령",
       "name": "군용항공기 비행안정성 인증에 관한 법률 시행령",
-      "query": "군용항공기 비행안정성 인증에 관한 법률 시행령",
+      "query": "군용항공기 비행안전성 인증에 관한 법률 시행령",
       "target": "law",
       "sourceUrl": "https://www.law.go.kr/lsInfoP.do?lsId=011058&ancYnChk=0#0000"
     },
@@ -206,6 +218,166 @@
       "query": "방위산업기술 보호법 시행규칙",
       "target": "law",
       "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EA%B8%B0%EC%88%A0%EB%B3%B4%ED%98%B8%EB%B2%95%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "계약관련",
+      "type": "법령",
+      "name": "국가를 당사자로 하는 계약에 관한 법률",
+      "query": "국가를 당사자로 하는 계약에 관한 법률",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%AD%EA%B0%80%EB%A5%BC%EB%8B%B9%EC%82%AC%EC%9E%90%EB%A1%9C%ED%95%98%EB%8A%94%EA%B3%84%EC%95%BD%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0"
+    },
+    {
+      "section": "계약관련",
+      "type": "시행령",
+      "name": "국가를 당사자로 하는 계약에 관한 법률 시행령",
+      "query": "국가를 당사자로 하는 계약에 관한 법률 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%AD%EA%B0%80%EB%A5%BC%EB%8B%B9%EC%82%AC%EC%9E%90%EB%A1%9C%ED%95%98%EB%8A%94%EA%B3%84%EC%95%BD%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%EB%A0%B9"
+    },
+    {
+      "section": "계약관련",
+      "type": "시행규칙",
+      "name": "국가를 당사자로 하는 계약에 관한 법률 시행규칙",
+      "query": "국가를 당사자로 하는 계약에 관한 법률 시행규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%AD%EA%B0%80%EB%A5%BC%EB%8B%B9%EC%82%AC%EC%9E%90%EB%A1%9C%ED%95%98%EB%8A%94%EA%B3%84%EC%95%BD%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "계약관련",
+      "type": "시행규칙",
+      "name": "방위산업에 관한 계약 사무처리규칙",
+      "query": "방위산업에 관한 계약 사무처리규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EC%97%90%EA%B4%80%ED%95%9C%EA%B3%84%EC%95%BD%EC%82%AC%EB%AC%B4%EC%B2%98%EB%A6%AC%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "계약관련",
+      "type": "시행규칙",
+      "name": "방위산업에 관한 착수금 및 중도금 지급규칙",
+      "query": "방위산업에 관한 착수금 및 중도금 지급규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%9C%84%EC%82%B0%EC%97%85%EC%97%90%EA%B4%80%ED%95%9C%EC%B0%A9%EC%88%98%EA%B8%88%EB%B0%8F%EC%A4%91%EB%8F%84%EA%B8%88%EC%A7%80%EA%B8%89%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "계약관련",
+      "type": "시행규칙",
+      "name": "방산원가대상물자의 원가계산에 관한 규칙",
+      "query": "방산원가대상물자의 원가계산에 관한 규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%B0%A9%EC%82%B0%EC%9B%90%EA%B0%80%EB%8C%80%EC%83%81%EB%AC%BC%EC%9E%90%EC%9D%98%EC%9B%90%EA%B0%80%EA%B3%84%EC%82%B0%EC%97%90%EA%B4%80%ED%95%9C%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "계약관련",
+      "type": "시행규칙",
+      "name": "특정물품등의 조달에 관한 국가를 당사자로 하는 계약에 관한 법률 시행령 특례규정",
+      "query": "특정물품등의 조달에 관한 국가를 당사자로 하는 계약에 관한 법률 시행령 특례규정",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%ED%8A%B9%EC%A0%95%EB%AC%BC%ED%92%88%EB%93%B1%EC%9D%98%EC%A1%B0%EB%8B%AC%EC%97%90%EA%B4%80%ED%95%9C%EA%B5%AD%EA%B0%80%EB%A5%BC%EB%8B%B9%EC%82%AC%EC%9E%90%EB%A1%9C%ED%95%98%EB%8A%94%EA%B3%84%EC%95%BD%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%EB%A0%B9%ED%8A%B9%EB%A1%80%EA%B7%9C%EC%A0%95"
+    },
+    {
+      "section": "계약관련",
+      "type": "시행규칙",
+      "name": "특정물품등의 조달에 관한 국가를 당사자로 하는 계약사무처리 특례규칙",
+      "query": "특정물품등의 조달에 관한 국가를 당사자로 하는 계약에 관한 법률 시행 특례규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%ED%8A%B9%EC%A0%95%EB%AC%BC%ED%92%88%EB%93%B1%EC%9D%98%EC%A1%B0%EB%8B%AC%EC%97%90%EA%B4%80%ED%95%9C%EA%B5%AD%EA%B0%80%EB%A5%BC%EB%8B%B9%EC%82%AC%EC%9E%90%EB%A1%9C%ED%95%98%EB%8A%94%EA%B3%84%EC%95%BD%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%ED%8A%B9%EB%A1%80%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "계약관련",
+      "type": "시행규칙",
+      "name": "특정조달을 위한 국가를 당사자로 하는 계약에 관한 법률 시행령 특례규정",
+      "query": "특정조달을 위한 국가를 당사자로 하는 계약에 관한 법률 시행령 특례규정",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%ED%8A%B9%EC%A0%95%EC%A1%B0%EB%8B%AC%EC%9D%84%EC%9C%84%ED%95%9C%EA%B5%AD%EA%B0%80%EB%A5%BC%EB%8B%B9%EC%82%AC%EC%9E%90%EB%A1%9C%ED%95%98%EB%8A%94%EA%B3%84%EC%95%BD%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%EB%A0%B9%ED%8A%B9%EB%A1%80%EA%B7%9C%EC%A0%95"
+    },
+    {
+      "section": "계약관련",
+      "type": "시행규칙",
+      "name": "특정조달을 위한 국가를 당사자로 하는 계약에 관한 법률 시행 특례규칙",
+      "query": "특정조달을 위한 국가를 당사자로 하는 계약에 관한 법률 시행 특례규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%ED%8A%B9%EC%A0%95%EC%A1%B0%EB%8B%AC%EC%9D%84%EC%9C%84%ED%95%9C%EA%B5%AD%EA%B0%80%EB%A5%BC%EB%8B%B9%EC%82%AC%EC%9E%90%EB%A1%9C%ED%95%98%EB%8A%94%EA%B3%84%EC%95%BD%EC%97%90%EA%B4%80%ED%95%9C%EB%B2%95%EB%A5%A0%EC%8B%9C%ED%96%89%ED%8A%B9%EB%A1%80%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "예산관련",
+      "type": "법령",
+      "name": "정부기업예산법",
+      "query": "정부기업예산법",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%A0%95%EB%B6%80%EA%B8%B0%EC%97%85%EC%98%88%EC%82%B0%EB%B2%95"
+    },
+    {
+      "section": "예산관련",
+      "type": "법령",
+      "name": "예산회계에 관한 특례법",
+      "query": "예산회계에 관한 특례법",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%98%88%EC%82%B0%ED%9A%8C%EA%B3%84%EC%97%90%EA%B4%80%ED%95%9C%ED%8A%B9%EB%A1%80%EB%B2%95"
+    },
+    {
+      "section": "예산관련",
+      "type": "시행령",
+      "name": "정부기업예산법 시행령",
+      "query": "정부기업예산법 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%A0%95%EB%B6%80%EA%B8%B0%EC%97%85%EC%98%88%EC%82%B0%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9"
+    },
+    {
+      "section": "예산관련",
+      "type": "시행령",
+      "name": "예산회계에 관한 특례법 시행령",
+      "query": "예산회계에 관한 특례법 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EC%98%88%EC%82%B0%ED%9A%8C%EA%B3%84%EC%97%90%EA%B4%80%ED%95%9C%ED%8A%B9%EB%A1%80%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9"
+    },
+    {
+      "section": "군수, 물품 관련",
+      "type": "법령",
+      "name": "군수품 관리법",
+      "query": "군수품 관리법",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%B0%EC%88%98%ED%92%88%EA%B4%80%EB%A6%AC%EB%B2%95"
+    },
+    {
+      "section": "군수, 물품 관련",
+      "type": "법령",
+      "name": "물품관리법",
+      "query": "물품관리법",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%AC%BC%ED%92%88%EA%B4%80%EB%A6%AC%EB%B2%95"
+    },
+    {
+      "section": "군수, 물품 관련",
+      "type": "시행령",
+      "name": "군수품 관리법 시행령",
+      "query": "군수품 관리법 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%B0%EC%88%98%ED%92%88%EA%B4%80%EB%A6%AC%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9"
+    },
+    {
+      "section": "군수, 물품 관련",
+      "type": "시행령",
+      "name": "물품관리법 시행령",
+      "query": "물품관리법 시행령",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%AC%BC%ED%92%88%EA%B4%80%EB%A6%AC%EB%B2%95%EC%8B%9C%ED%96%89%EB%A0%B9"
+    },
+    {
+      "section": "군수, 물품 관련",
+      "type": "시행규칙",
+      "name": "군수품 관리법 시행규칙",
+      "query": "군수품 관리법 시행규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EA%B5%B0%EC%88%98%ED%92%88%EA%B4%80%EB%A6%AC%EB%B2%95%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99"
+    },
+    {
+      "section": "군수, 물품 관련",
+      "type": "시행규칙",
+      "name": "물품관리법 시행규칙",
+      "query": "물품관리법 시행규칙",
+      "target": "law",
+      "sourceUrl": "https://www.law.go.kr/%EB%B2%95%EB%A0%B9/%EB%AC%BC%ED%92%88%EA%B4%80%EB%A6%AC%EB%B2%95%EC%8B%9C%ED%96%89%EA%B7%9C%EC%B9%99"
     }
   ]
 }

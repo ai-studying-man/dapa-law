@@ -17,6 +17,13 @@ This wrapper only exposes the categories requested for DAPA use:
 - `lstrm`: legal terms
 - `law_appendix`, `admrul_appendix`, `ordin_appendix`: appendix and form catalogs
 
+The DAPA defense-law catalog mirrors the homepage sections:
+
+- `방위사업 관련`
+- `계약관련`
+- `예산관련`
+- `군수, 물품 관련`
+
 Excluded on purpose:
 
 - mobile APIs
@@ -39,6 +46,7 @@ Excluded on purpose:
   - Health check
 - `GET /api/catalog`
   - DAPA defense law and administrative rule catalog from Supabase, with local JSON fallback
+  - Supports `source`, `section`, `type`, `query`, and `limit`
 
 ## Environment
 
@@ -79,6 +87,7 @@ continue to come from the National Law Information API at request time.
 3. Sync the DAPA catalog:
 
 ```bash
+npm run catalog:defense-laws
 npm run catalog:sync:supabase
 ```
 
@@ -98,10 +107,11 @@ https://your-vercel-domain.vercel.app/api/openapi
 
 ## Suggested ChatGPT Actions Flow
 
-1. Call `/api/search` with `query` and optional `category`.
-2. Pick the best result from `upstream.items`.
-3. Call `/api/detail` with `query` or direct `id`.
-4. For statutes, pass `article` when only one article is needed.
+1. For DAPA homepage lists, call `/api/catalog` with `source=defense_laws` and optional `section`.
+2. Call `/api/search` with `query` and optional `category`.
+3. Pick the best result from `upstream.items`.
+4. Call `/api/detail` with `query` or direct `id`.
+5. For statutes, pass `article` when only one article is needed.
 
 ## GPT Instructions
 
